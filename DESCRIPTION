@@ -1,0 +1,9 @@
+Package: StatsDemo
+Type: Package
+Title: Demo package for the EBI metabolomics courses in Hinxton
+Version: 0.1.0
+Author: Ron Wehrens
+Maintainer: Ron Wehrens <ron.wehrens@gmail.com>
+Description: R package containing demos for the EBI metabolomics courses in Hinxton. The students should not really type R code but simply call a few functions. Ideally students work in couples, and discuss all they see. After each exercise general comments are discussed in the whole group. This version contains only the statistics exercises, for the 2016 edition.
+License: GPL-2
+Depends: pls, lattice, ptw, scales

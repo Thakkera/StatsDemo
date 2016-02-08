@@ -1,0 +1,13 @@
+export(ExPlot, StatsQuiz, ExPCA, ExPLS,
+       PCA, scoreplot.PCA, loadingplot.PCA, biplot.PCA,
+       screeplot, scores.PCA, loadings.PCA, variances, reconstruct,
+       summary.PCA)
+
+S3method(summary, PCA)
+S3method(scoreplot, PCA)
+S3method(loadingplot, PCA)
+S3method(biplot, PCA)
+S3method(scores, PCA)
+S3method(loadings, PCA)
+
+

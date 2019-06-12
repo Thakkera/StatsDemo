@@ -141,7 +141,7 @@ ExPlot <- function() {
 
     if (ans == 1)
         print(splom(~ wines.df0[,-1], data = wines.df0,
-                    groups = variety, pscales = 0))
+                    pch = ".", cex = 2, groups = variety, pscales = 0))
     
     if (ans == 2)
         print(bwplot(variety ~ Level | Var, data = wines.df,
@@ -227,10 +227,10 @@ ExPlot <- function() {
       
       if (ans == 1) {
         print(splom(wines.df0[,-1], groups = vintages, pscales = 0,
-                    main = "Original data"))
+                    pch = ".", cex = 2, main = "Original data"))
         dev.new()
         print(splom(wines.df0.sc[,-1], groups = vintages, pscales = 0,
-                    main = "Scaled data"))
+                    pch = ".", cex = 2, main = "Scaled data"))
       }
       
       if (ans == 2) {
@@ -292,7 +292,7 @@ ExPCA <- function(){
   
   readline("\n\nHit return to show a scatter plot of the data (be patient!)")
   
-  pairs(PCADATA, col = colors)
+  pairs(PCADATA, pch = ".", cex = 2, col = colors)
   
   cat("\nCan you guess what you are looking at?")
   

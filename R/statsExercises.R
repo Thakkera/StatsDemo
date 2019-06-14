@@ -290,9 +290,9 @@ ExPCA <- function(){
   
   data(PCADATA)
   
-  readline("\n\nHit return to show a scatter plot of the data (be patient!)")
+  readline("\n\nHit return to show a scatter plot of the data.")
   
-  pairs(PCADATA, col = colors)
+  pairs(PCADATA, col = colors, pch = ".", cex = 2)
   
   cat("\nCan you guess what you are looking at?")
   

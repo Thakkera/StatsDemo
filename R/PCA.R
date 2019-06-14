@@ -190,27 +190,32 @@ loadingplot.PCA <- function(object, pc = c(1,2),
                             min.length = .01, varnames = NULL, ...)
 {
   pc <- unique(pc)
-  if (length(pc) == 1)
+  if (length(pc) == 1) {
     plot(pcloadings[,pc], type = "h", col = col,
          main = paste("Loadings PC", pc),
-         sub = paste("Explained variance: ", round(obj$var[pc]/object$totalvar, 1), "%", sep = "")
-         
+         ylab = "Loading", xlab = "Variable",
+         sub = paste("Explained variance: ",
+                     round(100*object$var[pc]/object$totalvar, 1), "%", sep = ""))
+    abline(h = 0, col = "gray")
+    return(invisible(pcloadings[,pc]))
+  }
+  
   if (add) pcloadings <- pcloadings / scalefactor
-
+  
   if (is.null(varnames))
     if (is.null(varnames <- rownames(pcloadings)))
       show.names <- FALSE
-
+  
   ## Preliminaries: determine range of the plot
   if (missing(xlim)) xlim <- unsigned.range(pcloadings[,pc[1]])
   if (missing(ylim)) ylim <- unsigned.range(pcloadings[,pc[2]])
-
+  
   if (!add) {
     if (show.names) { # may need extra space for names
       xlim <- xlim * 1.2
       ylim <- ylim * 1.1 # no word length to take into account
     }
-
+    
     ## determine default axis labels
     if (!missing(object) && object$centered.data) {
       if (missing(xlab))
@@ -227,7 +232,7 @@ loadingplot.PCA <- function(object, pc = c(1,2),
       if (missing(xlab)) xlab <- paste("PC", pc[1])
       if (missing(ylab)) ylab <- paste("PC", pc[2])
     }
-     
+    
     on.exit(par(op))
     op <- par(pty = "s") # make a square rather than oblong plot
     
@@ -235,12 +240,12 @@ loadingplot.PCA <- function(object, pc = c(1,2),
          xlab = xlab, ylab = ylab, xlim = xlim, ylim = ylim, ...)
     abline(h = 0, v = 0, col = "gray", lty = 2)
   }
-
+  
   nonzeros <- apply(pcloadings[,pc], 1,
                     function(x) sum(x^2) > min.length)
   if (length(col) == 1)
     col <- rep(col, nrow(pcloadings))
-
+  
   if (show.names & sum(nonzeros) > 0) {
     text(pcloadings[nonzeros,pc[1]] * 1.1,
          pcloadings[nonzeros,pc[2]] * 1.1,
@@ -248,7 +253,7 @@ loadingplot.PCA <- function(object, pc = c(1,2),
   } else {
     points(pcloadings[,pc], col = col[nonzeros], ...)
   }
-
+  
   origin <- rep(0, nrow(pcloadings))
   arrows(origin[nonzeros],
          origin[nonzeros],
@@ -256,7 +261,7 @@ loadingplot.PCA <- function(object, pc = c(1,2),
          pcloadings[nonzeros, pc[2]],
          ang = 15, len=.15,
          col = col[nonzeros], ...)
-
+  
   if (add) { 
     ## biplot: reset the axis system to the loadings plot
     par(new = TRUE)

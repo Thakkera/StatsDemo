@@ -19,7 +19,7 @@ sidebar <- dashboardSidebar(
              menuSubItem("Wine data", tabName = "ex3Wine")),
     menuItem("4: The effect of scaling",
              menuSubItem("Introduction", tabName = "ex4"),
-             menuSubItem("Lambrusco!", tabName = "ex4Lamb"))
+             menuSubItem("Lambrusco, lambrusco!", tabName = "ex4Lamb"))
   )
 )
 
@@ -73,21 +73,22 @@ tabEx2S <-
   tabItem(tabName = "ex2Synth",
           fluidRow(
             column(width = 4,
-                   p("\nHere you will look at the loadings for the toy data set containing 2,967 objects and 10 variables (the letters). Remember that you were asked about how this data set may be reconstructed? The loading plots could provide a hint...")),
+                   p("\nHere you will look at the loadings for the toy data set containing 2,967 objects and 10 variables (the letters). First inspect the individual loadings, and discuss how to interpret the plots; second, show two components at the same time.")),
             column(width = 4,
-                   p("\nIn the dropdown boxes you can select one or two components for which loadings are shown.")),
+                   p("\nIn the dropdown boxes to the right you can select one or two components for which loadings are shown.")),
             column(width = 4,
-                   column(width = 6,
+                   column(width = 4,
                           selectInput("PC1", label = "First PC",
                                       choices = paste(1:10))),
-                   column(width = 6,
+                   column(width = 4,
                           selectInput("PC2", label = "Second PC",
                                       choices = c("none", paste(1:10)))),
-                   actionButton("showLoadings", "Show loadings!"))),
-          fluidRow(box(plotOutput(outputId = "plotLoadings"),
+                   column(width = 4,
+                          actionButton("showLoadings", "Show loadings!")))),
+          fluidRow(box(plotOutput(outputId = "PCALoadings"),
                        align = "center", width=12)),
           fluidRow(align = "center",
-                   textOutput(outputId = "PCALoadingquestion"))
+                   textOutput(outputId = "PCALoadingQuestion"))
           )
 
 tabEx3 <-
@@ -103,11 +104,37 @@ tabEx4 <-
               p("Here we present yet another wine data set from mass-spectrometry-based metabolomics. The variables are the intensities of the individual mass peaks. There are quite large differences between intensities, and this is going to influence the results"),
               p("Check out a couple of scalings, all commonly used in metabolomics, and discuss the effects on the scores and on the loadings. Note all scaling methods will be applied after mean-centering the data, which is mandatory before doing PCA."), width = 8))
 
+tab4ExLS <-
+  tabItem(tabName = "ex4Lamb",
+          fluidRow(
+            column(width = 6,
+                   p("\nLambrusco is a sparkling red wine from Italy with a pretty bad reputation in the past: lemonade with alcohol was one of the more friendly connotations. However, there are some very good ones with distinct flavours and undeniable charm."),
+                   p("This data set contains 76 samples, and we have 1,208 variables. The samples are divided into three groups, corresponding to the origin of the wine. A key feature of such data is that the majority of the feature intensities is comparable in size, but typically there are a few VERY LARGE numbers present.")),
+            column(width = 4,
+                   p("\nBelow, you'll see the score plot and the loading plot for a given scaling method. First, notice that the numbers at the axes of the score and loading plots are identical. Is this a coincidence?"),
+                   p("In the dropdown box to the right you can select different options. This will lead to very different results below - the question to you is whether you understand the changes.")),
+            column(width = 2,
+                   selectInput("LScaling",
+                               label = "Choose scaling",
+                               choices = c("Mean centering" = "mean",
+                                           "Autoscaling" = "auto",
+                                           "Pareto scaling" = "pareto",
+                                           "Log scaling" = "log",
+                                           "Sqrt scaling" = "sqrt",
+                                           "Log scaling plus autoscaling" = "logauto",
+                                           "Sqrt scaling plus autoscaling", "sqrtauto")),
+                   actionButton("GoLamb", "Go!"))),
+          fluidRow(box(plotOutput(outputId = "LamboScores")),
+                   box(plotOutput(outputId = "LamboLoadings"))),
+          fluidRow(align = "center",
+                   textOutput(outputId = "LambruscoQuestion"))
+          )
+
 body <- dashboardBody(
   tabItems(tabEx1, tabEx1S, tabEx1W,
            tabEx2, tabEx2S,
            tabEx3,
-           tabEx4)
+           tabEx4, tab4ExLS)
 )
 
 ui <- dashboardPage(
@@ -119,6 +146,8 @@ ui <- dashboardPage(
 server <- function(input, output) {
   data(PCADATA)
   data(wines)
+  data(lambrusco)
+  labs <- factor(sample.labels)
 
   PCA.PCA <- PCA(scale(PCADATA, scale = FALSE))
   wine.PCA <- PCA(scale(wines))
@@ -167,15 +196,42 @@ server <- function(input, output) {
   })
 
   observeEvent(input$showLoadings, {
+    output$PCALoadingQuestion <- renderText({
+      "Additional question: in the PC 1 vs PC 2 plot, which variables show high correlation?"
+      })
     output$PCALoadings <- renderPlot({
       if (input$PC2 == "none") {
-        pcs <- input$PC1
+        pcs <- as.numeric(input$PC1)
       } else {
-        pcs <- unique(c(input$PC1, input$PC2))
+        pcs <- as.numeric(unique(c(input$PC1, input$PC2)))
       }
       
-      loadingplot(PCA.PCA, pc = pcs)
+      loadingplot(PCA.PCA, pc = pcs, show.names = TRUE)
     })
+  })
+
+  observeEvent(input$showLambrusco, {
+    output$LambruscoQuestion <- renderText({
+      "Which scaling separates the groups best?"
+    })
+
+    Lambo.scaling <- reactive(input$LScaling)
+    Lambo.PCA <- switch(Lambo.scaling(),
+                        "mean" = PCA(scale(X, scale = FALSE)),
+                        "auto" = PCA(scale(X)),
+                        "pareto" = PCA(scale(X, scale = apply(X, 2, function(x) sqrt(sd(x))))),
+                        "log" = PCA(log(X + 1)),
+                        "sqrt" = PCA(sqrt(X)),
+                        "logauto" = PCA(scale(log(X + 1))),
+                        "sqrtauto" = PCA(scale(sqrt(X))))
+    
+    output$LamboLoadings <- renderPlot({
+      loadingplot(Lambo.PCA, pc = 1:2, col = as.integer(labs))
+    })
+    output$LamboScores <- renderPlot({
+      myscoreplot(Lambo.PCA, pc = 1:2, groups = labs)
+    })
+
   })
 }
 

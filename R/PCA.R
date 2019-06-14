@@ -189,6 +189,12 @@ loadingplot.PCA <- function(object, pc = c(1,2),
                             xlab, ylab, xlim, ylim, col = "blue",
                             min.length = .01, varnames = NULL, ...)
 {
+  pc <- unique(pc)
+  if (length(pc) == 1)
+    plot(pcloadings[,pc], type = "h", col = col,
+         main = paste("Loadings PC", pc),
+         sub = paste("Explained variance: ", round(obj$var[pc]/object$totalvar, 1), "%", sep = "")
+         
   if (add) pcloadings <- pcloadings / scalefactor
 
   if (is.null(varnames))

@@ -19,8 +19,9 @@ sidebar <- dashboardSidebar(
     menuItem("4: The effect of scaling",
              menuSubItem("Introduction", tabName = "ex4"),
              menuSubItem("Lambrusco, lambrusco!", tabName = "ex4Lamb")),
-    menuItem("4: Size matters",
+    menuItem("5: Size matters",
              menuSubItem("Introduction", tabName = "ex5"),
+             menuSubItem("No sparkles", tabName = "ex5Wine"),
              menuSubItem("Sparkles", tabName = "ex5Lamb"))
   )
 )
@@ -168,7 +169,7 @@ tab4ExLS <-
                                            "Sqrt scaling" = "sqrt",
                                            "Log scaling plus autoscaling" = "logauto",
                                            "Sqrt scaling plus autoscaling", "sqrtauto")),
-                   actionButton("GoLamb", "Go!"))),
+                   actionButton("showLambrusco", "Go!"))),
           fluidRow(box(plotOutput(outputId = "LamboScores")),
                    box(plotOutput(outputId = "LamboLoadings"))),
           fluidRow(align = "center",
@@ -180,27 +181,44 @@ tabEx5 <-
           h2("\nExercise 5: Choosing the 'Correct' Number of Components"),
           box(p("We may wonder how many PCs to consider to obtain a good overview of the multivariate data. Of course, this depends on the data set. The original idea that it should be possible to distinguish 'significant' components from 'non-significant' components (signal versus noise) is more or less extinct, which is why we put the title word Correct in quotes. This is exploratory analysis! The question is: what plots show you something interesting?"),
               p("Nevertheless there are a couple of rules of thumb that can be used. First of all, we may decide that the first two components are enough, period. This is quite common in visualization applications. Secondly, we may require a certain percentage of variance explained - typically something like 80%, or, for data sets with more variables, 50%. Thirdly, we may look at scree plots."),
-              p("Here you will look at a number of criteria for the wine data. Note that, again, the optimal number of components really depends on the scaling."), width = 8))
+              p("Here you will look at a number of criteria for the wine data. Note that, again, the optimal number of components really depends on the scaling. In addition, the same exercise can be done for a data set with many more variables."), width = 8))
 
-body <- dashboardBody(
-  tabItems(tabEx1, tabEx1S, tabEx1W,
-           tabEx2, tabEx2S, tabEx2W,
-           tabEx3, tabEx3W,
-           tabEx4, tab4ExLS,
-           tabEx5)
-)
-
-ui <- dashboardPage(
-  dashboardHeader(title = "PCA exercises"),
-  sidebar,
-  body
-)
+tab5ExL <-
+  tabItem(tabName = "ex5Lamb",
+          fluidRow(
+            column(width = 6,
+                   p("\nThe Lambrusco data again: 76 samples, and 1,208 variables. You choose the scaling and you'll see the two types of screeplot (log variance, and cumulative percentage explained). Choose the number of components and you'll see the corresponding scores.")),
+            column(width = 2,
+                   selectInput("LambNComp", label = "Number of PCs",
+                               choices = paste(1:10), 
+                               selected = "2")),
+            column(width = 2,
+                   selectInput("LScalingScree",
+                               label = "Choose scaling",
+                               choices = c("Mean centering" = "mean",
+                                           "Autoscaling" = "auto",
+                                           "Pareto scaling" = "pareto",
+                                           "Log scaling" = "log",
+                                           "Sqrt scaling" = "sqrt",
+                                           "Log scaling plus autoscaling" = "logauto",
+                                           "Sqrt scaling plus autoscaling" = "sqrtauto"))),
+            column(width = 2,
+                   actionButton("showLambruscoScree", "Go!"))
+          ),
+          fluidRow(
+            column(width = 6,
+                   box(plotOutput(outputId = "LamboScree"), width = 12)),
+            column(width = 6,
+                   box(plotOutput(outputId = "LamboScorePairs"), width = 12))),
+          fluidRow(align = "center",
+                   textOutput(outputId = "LambruscoScreeQuestion"))
+          )
 
 server <- function(input, output) {
   data(PCADATA)
   data(wines)
   data(lambrusco)
-  labs <- factor(sample.labels)
+  X <- X[, apply(X, 2, sd) > 0]
 
   PCA.PCA <- PCA(scale(PCADATA, scale = FALSE))
   wine.PCA <- PCA(scale(wines))
@@ -294,28 +312,77 @@ server <- function(input, output) {
     "Note that the percentage of variance explained at the axes is equal in all plots. Also note that the loading axes in the biplot have been adapted to fit the loadings comfortably in the plot.<br><b>Question</b>: which variables are most discriminative for each wine? That is, which do you expect to have high values in a particular wine, and which have low values?"})
   
   observeEvent(input$showLambrusco, {
+    Lambo.PCA <- reactive(
+      switch(input$LScaling,
+             "mean" = PCA(scale(X, scale = FALSE)),
+             "auto" = PCA(scale(X)),
+             "pareto" = PCA(scale(X, scale = apply(X, 2, function(x) sqrt(sd(x))))),
+             "log" = PCA(scale(log(X + 1), scale = FALSE)),
+             "sqrt" = PCA(scale(sqrt(X), scale = FALSE)),
+             "logauto" = PCA(scale(log(X + 1))),
+             "sqrtauto" = PCA(scale(sqrt(X))))
+    )
+    
     output$LambruscoQuestion <- renderText({
       "Which scaling separates the groups best?"
     })
-
-    Lambo.scaling <- reactive(input$LScaling)
-    Lambo.PCA <- switch(Lambo.scaling(),
-                        "mean" = PCA(scale(X, scale = FALSE)),
-                        "auto" = PCA(scale(X)),
-                        "pareto" = PCA(scale(X, scale = apply(X, 2, function(x) sqrt(sd(x))))),
-                        "log" = PCA(log(X + 1)),
-                        "sqrt" = PCA(sqrt(X)),
-                        "logauto" = PCA(scale(log(X + 1))),
-                        "sqrtauto" = PCA(scale(sqrt(X))))
     
     output$LamboLoadings <- renderPlot({
-      loadingplot(Lambo.PCA, pc = 1:2, col = as.integer(labs))
+      loadingplot(Lambo.PCA(), pc = 1:2)
     })
     output$LamboScores <- renderPlot({
-      myscoreplot(Lambo.PCA, pc = 1:2, groups = labs)
+      myscoreplot(Lambo.PCA(), pc = 1:2, groups = sample.labels)
     })
 
   })
+
+  observeEvent(input$showLambruscoScree, {
+    output$LambruscoScreeQuestion <- renderText({
+      "Here we limit your choice to the first ten PCs. There are more - how many PCs could you choose at most?"})
+    
+    Lambo.PCAScr <- reactive({
+      switch(input$LScalingScree,
+             "mean" = PCA(scale(X, scale = FALSE)),
+             "auto" = PCA(scale(X)),
+             "pareto" = PCA(scale(X, scale =
+                                       apply(X, 2, function(x) sqrt(sd(x))))),
+             "log" = PCA(scale(log(X + 1), scale = FALSE)),
+             "sqrt" = PCA(scale(sqrt(X), scale = FALSE)),
+             "logauto" = PCA(scale(log(X + 1))),
+             "sqrtauto" = PCA(scale(sqrt(X))))
+    })
+    
+    output$LamboScree <- renderPlot({
+      par(mfrow = c(2,1))
+      screeplot(Lambo.PCAScr(), npc = 10)
+      screeplot(Lambo.PCAScr(), npc = 10, type = "percentage")
+    })
+    
+    output$LamboScorePairs <- renderPlot({
+      if (input$LambNComp < 3) {
+        scoreplot(Lambo.PCAScr(), col = as.integer(sample.labels),
+                  pch = as.integer(sample.labels))
+      } else {
+        splom(scores(Lambo.PCAScr(), input$LambNComp), pscales = 0,
+              groups = sample.labels, pch = ".", cex = 2)
+      }
+    })
+  })  
 }
+
+body <- dashboardBody(
+  tabItems(tabEx1, tabEx1S, tabEx1W,
+           tabEx2, tabEx2S, tabEx2W,
+           tabEx3, tabEx3W,
+           tabEx4, tab4ExLS,
+           tabEx5, #tab5ExW,
+           tab5ExL)
+)
+
+ui <- dashboardPage(
+  dashboardHeader(title = "PCA exercises"),
+  sidebar,
+  body
+)
 
 shinyApp(ui = ui, server = server)

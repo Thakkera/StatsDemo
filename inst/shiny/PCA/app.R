@@ -3,7 +3,7 @@ require(shinydashboard)
 require(StatsDemo)
 
 sidebar <- dashboardSidebar(
-  helpText("Understanding PCA: components and examples"),
+  helpText("Understanding PCA"),
   sidebarMenu(
     menuItem("1: Score plots", 
              menuSubItem("Introduction", tabName = "ex1"),
@@ -15,11 +15,13 @@ sidebar <- dashboardSidebar(
              menuSubItem("Wine data", tabName = "ex2Wine")),
     menuItem("3: Biplots", 
              menuSubItem("Introduction", tabName = "ex3"),
-             menuSubItem("Synthetic data", tabName = "ex3Synth"),
              menuSubItem("Wine data", tabName = "ex3Wine")),
     menuItem("4: The effect of scaling",
              menuSubItem("Introduction", tabName = "ex4"),
-             menuSubItem("Lambrusco, lambrusco!", tabName = "ex4Lamb"))
+             menuSubItem("Lambrusco, lambrusco!", tabName = "ex4Lamb")),
+    menuItem("4: Size matters",
+             menuSubItem("Introduction", tabName = "ex5"),
+             menuSubItem("Sparkles", tabName = "ex5Lamb"))
   )
 )
 
@@ -91,11 +93,54 @@ tabEx2S <-
                    textOutput(outputId = "PCALoadingQuestion"))
           )
 
+tabEx2W <-
+  tabItem(tabName = "ex2Wine",
+          fluidRow(
+            column(width = 4,
+                   p("\nHere we focus on the loadings of the wine data set. First inspect the individual loadings, and discuss how to interpret the plots; second, show two components at the same time.")),
+            column(width = 4,
+                   p("\nIn the dropdown boxes to the right you can select one or two components for which loadings are shown.")),
+            column(width = 4,
+                   column(width = 4,
+                          selectInput("PC1W", label = "First PC",
+                                      choices = paste(1:10))),
+                   column(width = 4,
+                          selectInput("PC2W", label = "Second PC",
+                                      choices = c("none", paste(1:10)))),
+                   column(width = 4,
+                          actionButton("showLoadingsWine", "Show loadings!")))),
+          fluidRow(box(plotOutput(outputId = "PCALoadingsWine"),
+                       align = "center", width=12)),
+          fluidRow(align = "center",
+                   textOutput(outputId = "PCALoadingQuestionWine"))
+          )
+
 tabEx3 <-
   tabItem(tabName = "ex3",
           h2("\nExercise 3: Biplots"),
-          box(p("Biplots show a scoreplot and a loading plot in the same panel, superimposed. This allows you to easily relate groupings or effects in the scores to particular variable. Once you got the idea it can be pretty powerful, but note that grouping structure is not always visible in a PCA, especially when it depends on a few variables only."),
+          box(p("Biplots show a scoreplot and a loading plot in the same panel, superimposed. This allows you to easily relate groupings or effects in the scores to particular variable. Once you got the idea it can be pretty powerful. General remark: grouping structure is not always visible in a PCA, especially when it depends on a few variables only."),
               p("Have a look at the data sets in the sidebar, and discuss the results. Some questions will appear below the plots"), width = 8))
+
+tabEx3W <-
+  tabItem(tabName = "ex3Wine",
+          fluidRow(
+            column(width = 6,
+                   p("\nThe real power of PCA lies in combining score and loading plots. In the two leftmost plots below, you'll see both. Combining them in the biplot on the right leads in many cases to easier interpretation. ")),
+            column(width = 4,
+                   p("\nIn the dropdown boxes to the right you can select which components to visualize. (The lowest component will always be shown on the x axis.)")),
+            column(width = 1,
+                   selectInput("PC1WB", label = "First PC",
+                               choices = paste(1:10),
+                               selected = "1")),
+            column(width = 1,
+                   selectInput("PC2WB", label = "Second PC",
+                               choices = paste(1:10),
+                              selected = "2"))),
+          fluidRow(box(plotOutput(outputId = "PCABiplotWine"),
+                       align = "center", width=12)),
+          fluidRow(align = "center",
+                   htmlOutput(outputId = "PCABiplotQuestionWine"))
+          )
 
 tabEx4 <- 
   tabItem(tabName = "ex4",
@@ -130,11 +175,19 @@ tab4ExLS <-
                    textOutput(outputId = "LambruscoQuestion"))
           )
 
+tabEx5 <- 
+  tabItem(tabName = "ex5",
+          h2("\nExercise 5: Choosing the 'Correct' Number of Components"),
+          box(p("We may wonder how many PCs to consider to obtain a good overview of the multivariate data. Of course, this depends on the data set. The original idea that it should be possible to distinguish 'significant' components from 'non-significant' components (signal versus noise) is more or less extinct, which is why we put the title word Correct in quotes. This is exploratory analysis! The question is: what plots show you something interesting?"),
+              p("Nevertheless there are a couple of rules of thumb that can be used. First of all, we may decide that the first two components are enough, period. This is quite common in visualization applications. Secondly, we may require a certain percentage of variance explained - typically something like 80%, or, for data sets with more variables, 50%. Thirdly, we may look at scree plots."),
+              p("Here you will look at a number of criteria for the wine data. Note that, again, the optimal number of components really depends on the scaling."), width = 8))
+
 body <- dashboardBody(
   tabItems(tabEx1, tabEx1S, tabEx1W,
-           tabEx2, tabEx2S,
-           tabEx3,
-           tabEx4, tab4ExLS)
+           tabEx2, tabEx2S, tabEx2W,
+           tabEx3, tabEx3W,
+           tabEx4, tab4ExLS,
+           tabEx5)
 )
 
 ui <- dashboardPage(
@@ -210,6 +263,36 @@ server <- function(input, output) {
     })
   })
 
+  observeEvent(input$showLoadingsWine, {
+    output$PCALoadingQuestionWine <- renderText({
+      "Additional question: in the PC 1 vs PC 2 plot, which variables show high correlation?"
+      })
+    output$PCALoadingsWine <- renderPlot({
+      if (input$PC2W == "none") {
+        pcs <- as.numeric(input$PC1W)
+      } else {
+        pcs <- as.numeric(unique(c(input$PC1W, input$PC2W)))
+      }
+      
+      loadingplot(wine.PCA, pc = pcs, show.names = TRUE)
+    })
+  })
+
+  output$PCABiplotWine <- renderPlot({
+    pcs <- as.numeric(unique(c(input$PC1WB, input$PC2WB)))
+    if (length(pcs) == 1)
+      pcs <- c(pcs, min(setdiff(1:10, pcs)))
+    pcs <- sort(pcs)
+
+    par(mfrow = c(1,3))
+    scoreplot(wine.PCA, pc = pcs, col = as.integer(vintages))
+    loadingplot(wine.PCA, pc = pcs, show.names = TRUE)
+    biplot(wine.PCA, pc = pcs, score.col = as.integer(vintages), show.names = "loadings")
+    })
+  
+  output$PCABiplotQuestionWine <- renderText({
+    "Note that the percentage of variance explained at the axes is equal in all plots. Also note that the loading axes in the biplot have been adapted to fit the loadings comfortably in the plot.<br><b>Question</b>: which variables are most discriminative for each wine? That is, which do you expect to have high values in a particular wine, and which have low values?"})
+  
   observeEvent(input$showLambrusco, {
     output$LambruscoQuestion <- renderText({
       "Which scaling separates the groups best?"

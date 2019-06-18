@@ -352,9 +352,10 @@ server <- function(input, output) {
     })
     
     output$LamboScree <- renderPlot({
-      par(mfrow = c(2,1))
+      par(mfrow = c(2,1), mar = c(4, 3, 0, 1))
       screeplot(Lambo.PCAScr(), npc = 10)
-      screeplot(Lambo.PCAScr(), npc = 10, type = "percentage")
+      screeplot(Lambo.PCAScr(), npc = 10,
+                ylim = c(0, 100), type = "percentage")
     })
     
     output$LamboScorePairs <- renderPlot({

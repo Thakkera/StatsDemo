@@ -363,7 +363,7 @@ server <- function(input, output) {
                   pch = as.integer(sample.labels))
       } else {
         splom(scores(Lambo.PCAScr(), input$LambNComp), pscales = 0,
-              groups = sample.labels, pch = ".", cex = 2)
+              groups = sample.labels)
       }
     })
   })  

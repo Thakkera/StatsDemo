@@ -168,7 +168,7 @@ tab4ExLS <-
                                            "Log scaling" = "log",
                                            "Sqrt scaling" = "sqrt",
                                            "Log scaling plus autoscaling" = "logauto",
-                                           "Sqrt scaling plus autoscaling", "sqrtauto")),
+                                           "Sqrt scaling plus autoscaling" = "sqrtauto")),
                    actionButton("showLambrusco", "Go!"))),
           fluidRow(box(plotOutput(outputId = "LamboScores")),
                    box(plotOutput(outputId = "LamboLoadings"))),
@@ -218,7 +218,6 @@ server <- function(input, output) {
   data(PCADATA)
   data(wines)
   data(lambrusco)
-  X <- X[, apply(X, 2, sd) > 0]
 
   PCA.PCA <- PCA(scale(PCADATA, scale = FALSE))
   wine.PCA <- PCA(scale(wines))

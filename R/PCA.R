@@ -251,7 +251,7 @@ loadingplot.PCA <- function(object, pc = c(1,2),
          pcloadings[nonzeros,pc[2]] * 1.1,
          varnames[nonzeros], col = col[nonzeros])
   } else {
-    points(pcloadings[,pc], col = col[nonzeros], ...)
+    points(pcloadings[,pc], col = col, ...)
   }
   
   origin <- rep(0, nrow(pcloadings))

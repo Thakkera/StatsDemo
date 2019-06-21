@@ -128,7 +128,7 @@ tabEx3W <-
             column(width = 6,
                    p("\nThe real power of PCA lies in combining score and loading plots. In the two leftmost plots below, you'll see both. Combining them in the biplot on the right leads in many cases to easier interpretation. ")),
             column(width = 4,
-                   p("\nIn the dropdown boxes to the right you can select which components to visualize. (The lowest component will always be shown on the x axis.)")),
+                   p("\nIn the dropdown boxes to the right you can select which components to visualize. (The lowest component will always be shown on the x axis - if you select the same component twice you'll be ignored ;P.)")),
             column(width = 1,
                    selectInput("PC1WB", label = "First PC",
                                choices = paste(1:10),
@@ -182,6 +182,37 @@ tabEx5 <-
           box(p("We may wonder how many PCs to consider to obtain a good overview of the multivariate data. Of course, this depends on the data set. The original idea that it should be possible to distinguish 'significant' components from 'non-significant' components (signal versus noise) is more or less extinct, which is why we put the title word Correct in quotes. This is exploratory analysis! The question is: what plots show you something interesting?"),
               p("Nevertheless there are a couple of rules of thumb that can be used. First of all, we may decide that the first two components are enough, period. This is quite common in visualization applications. Secondly, we may require a certain percentage of variance explained - typically something like 80%, or, for data sets with more variables, 50%. Thirdly, we may look at scree plots."),
               p("Here you will look at a number of criteria for the wine data. Note that, again, the optimal number of components really depends on the scaling. In addition, the same exercise can be done for a data set with many more variables."), width = 8))
+
+tab5ExW <-
+  tabItem(tabName = "ex5Wine",
+          fluidRow(
+            column(width = 6,
+                   p("\nThe wine data - just to remind you - 177 samples, three varieties, and 13 (very different) variables. You choose the scaling and you'll see the two types of screeplot (log variance, and cumulative percentage explained). Choose the number of components and you'll see the corresponding scores.")),
+            column(width = 2,
+                   selectInput("WineNComp", label = "Number of PCs",
+                               choices = 1:13, 
+                               selected = "2")),
+            column(width = 2,
+                   selectInput("WScalingScree",
+                               label = "Choose scaling",
+                               choices = c("Mean centering" = "mean",
+                                           "Autoscaling" = "auto",
+                                           "Pareto scaling" = "pareto",
+                                           "Log scaling" = "log",
+                                           "Sqrt scaling" = "sqrt",
+                                           "Log scaling plus autoscaling" = "logauto",
+                                           "Sqrt scaling plus autoscaling" = "sqrtauto"))),
+            column(width = 2,
+                   actionButton("showWineScree", "Go!"))
+          ),
+          fluidRow(
+            column(width = 6,
+                   box(plotOutput(outputId = "WineScree"), width = 12)),
+            column(width = 6,
+                   box(plotOutput(outputId = "WineScorePairs"), width = 12))),
+          fluidRow(align = "center",
+                   textOutput(outputId = "WineScreeQuestion"))
+          )
 
 tab5ExL <-
   tabItem(tabName = "ex5Lamb",
@@ -323,7 +354,7 @@ server <- function(input, output) {
     )
     
     output$LambruscoQuestion <- renderText({
-      "Which scaling separates the groups best?"
+      "Which scaling separates the groups best? One of the scalings leads to a very strange division in two groups - have you found it?"
     })
     
     output$LamboLoadings <- renderPlot({
@@ -334,6 +365,40 @@ server <- function(input, output) {
     })
 
   })
+
+  observeEvent(input$showWineScree, {
+    output$WineScreeQuestion <- renderText({
+      "How many PCs would you pick?"})
+    
+    Wine.PCAScr <- reactive({
+      switch(input$WScalingScree,
+             "mean" = PCA(scale(wines, scale = FALSE)),
+             "auto" = PCA(scale(wines)),
+             "pareto" = PCA(scale(wines, scale =
+                                       apply(wines, 2, function(x) sqrt(sd(x))))),
+             "log" = PCA(scale(log(wines + 1), scale = FALSE)),
+             "sqrt" = PCA(scale(sqrt(wines), scale = FALSE)),
+             "logauto" = PCA(scale(log(wines + 1))),
+             "sqrtauto" = PCA(scale(sqrt(wines))))
+    })
+    
+    output$WineScree <- renderPlot({
+      par(mfrow = c(2,1), mar = c(4, 4.2, 0, 1))
+      screeplot(Wine.PCAScr())
+      abline(h = 0, col = "gray", lty = 2)
+      screeplot(Wine.PCAScr(), ylim = c(0, 100), type = "percentage")
+      abline(h = c(0, 100), col = "gray", lty = 2)
+    })
+    
+    output$WineScorePairs <- renderPlot({
+      if (as.integer(input$WineNComp) < 3) {
+        scoreplot(Wine.PCAScr(), col = wine.classes, pch = wine.classes)
+      } else {
+        splom(scores(Wine.PCAScr(), as.integer(input$WineNComp)),
+              pscales = 0, groups = vintages, pch = ".", cex = 2)
+      }
+    })
+  })  
 
   observeEvent(input$showLambruscoScree, {
     output$LambruscoScreeQuestion <- renderText({
@@ -352,19 +417,21 @@ server <- function(input, output) {
     })
     
     output$LamboScree <- renderPlot({
-      par(mfrow = c(2,1), mar = c(4, 3, 0, 1))
+      par(mfrow = c(2,1), mar = c(4, 4.2, 0, 1))
       screeplot(Lambo.PCAScr(), npc = 10)
+      abline(h = 0, col = "gray", lty = 2)
       screeplot(Lambo.PCAScr(), npc = 10,
                 ylim = c(0, 100), type = "percentage")
+      abline(h = c(0, 100), col = "gray", lty = 2)
     })
     
     output$LamboScorePairs <- renderPlot({
-      if (input$LambNComp < 3) {
+      if (as.integer(input$LambNComp) < 3) {
         scoreplot(Lambo.PCAScr(), col = as.integer(sample.labels),
                   pch = as.integer(sample.labels))
       } else {
-        splom(scores(Lambo.PCAScr(), input$LambNComp), pscales = 0,
-              groups = sample.labels)
+        splom(scores(Lambo.PCAScr(), as.integer(input$LambNComp)),
+              pscales = 0, groups = sample.labels, pch = ".", cex = 2)
       }
     })
   })  
@@ -375,8 +442,7 @@ body <- dashboardBody(
            tabEx2, tabEx2S, tabEx2W,
            tabEx3, tabEx3W,
            tabEx4, tab4ExLS,
-           tabEx5, #tab5ExW,
-           tab5ExL)
+           tabEx5, tab5ExW, tab5ExL)
 )
 
 ui <- dashboardPage(

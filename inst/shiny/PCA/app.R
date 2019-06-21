@@ -5,6 +5,7 @@ require(StatsDemo)
 sidebar <- dashboardSidebar(
   helpText("Understanding PCA"),
   sidebarMenu(
+    menuItem("Introduction", tabName = "intro"),
     menuItem("1: Score plots", 
              menuSubItem("Introduction", tabName = "ex1"),
              menuSubItem("Synthetic data", tabName = "ex1Synth"),
@@ -26,11 +27,16 @@ sidebar <- dashboardSidebar(
   )
 )
 
+tabIntro <-
+  tabItem(tabName = "intro",
+          h2("Introduction"),
+          box(p("Principal Component Analysis (PCA) is a projection method allowing the user to get na global overview of a data set. Here, we are going to simply apply PCA to a couple of data sets, to get a feel for what is possible, and how to interpret the plots.")),
+          box(p("Go through the list of exercises in the sidebar, and you'll know the most important characteristics and features of PCA!")))
+
 tabEx1 <-
   tabItem(tabName = "ex1",
           h2("\nExercise 1: Score Plots"),
-          box(p("Principal Component Analysis (PCA) is a projection method allowing the user to get na global overview of a data set. Here, we are going to simply apply PCA to a couple of data sets, to get a feel for what is possible, and how to interpret the plots."),
-              p("Score plots show the positions of the samples (rows in the original data matrix) in the PC space. So this type of plot tells you something about which samples are similar (in this subspace!) and which are not."),
+          box(p("Score plots show the positions of the samples (rows in the original data matrix) in the PC space. So this type of plot tells you something about which samples are similar (in this subspace!) and which are not."),
               p("Have a look at the data sets in the sidebar, and discuss the results. Some questions will appear below the plots"), width = 8))
 
 tabEx1S <-
@@ -438,7 +444,8 @@ server <- function(input, output) {
 }
 
 body <- dashboardBody(
-  tabItems(tabEx1, tabEx1S, tabEx1W,
+  tabItems(tabIntro,
+           tabEx1, tabEx1S, tabEx1W,
            tabEx2, tabEx2S, tabEx2W,
            tabEx3, tabEx3W,
            tabEx4, tab4ExLS,

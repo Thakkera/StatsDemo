@@ -15,11 +15,9 @@ sidebar <- dashboardSidebar(
              menuSubItem("Lambrusco data", tabName = "ex2Lambo")),
     menuItem("3: Prediction", 
              menuSubItem("Introduction", tabName = "ex3"),
-             menuSubItem("Wine data", tabName = "ex3Wine")),
-    menuItem("4: Size matters",
-             menuSubItem("Introduction", tabName = "ex5"),
-             menuSubItem("No sparkles", tabName = "ex5Wine"),
-             menuSubItem("Sparkles", tabName = "ex5Lamb"))
+             menuSubItem("Wine data", tabName = "ex3Wine"),
+             menuSubItem("Lambrusco data", tabName = "ex3Lambrusco"),
+             menuSubItem("Mystery data", tabName = "ex3Mystery"))
   )
 )
 
@@ -97,7 +95,7 @@ tabEx2L <-
   tabItem(tabName = "ex2Lambo",
           fluidRow(
             column(width = 6,
-                   p("\nPLS can also be used in a classification context. With two classes we only need use labels like 0 and 1 (with a cutoff of 0.5) or -1 and 1 (with a cutoff of 0). For more than three classes, PLS is basically modelling class memberships, so for each of the classes the probability of belonging to that class. Here, we are predicting origin (three possibilities) for the Lambrusco data.")),
+                   p("\nPLS can also be used in a classification context. With two classes we only need use labels like 0 and 1 (with a cutoff of 0.5) or -1 and 1 (with a cutoff of 0). For more than three classes, PLS is basically modelling class memberships, so for each of the classes the probability of belonging to that class. Here, we are predicting origin (three possibilities) for the Lambrusco data. Choose the minimal and maximal variable number to zoom in on particular areas in the regression vector.")),
             column(width = 3,
                    selectInput("LScalingC",
                                label = "Choose scaling",
@@ -123,134 +121,85 @@ tabEx2L <-
           fluidRow(align = "center",
                    textOutput(outputId = "PLSCoefQuestionLambo")))
 
-## tabEx3 <-
-##   tabItem(tabName = "ex3",
-##           h2("\nExercise 3: Biplots"),
-##           box(p("Biplots show a scoreplot and a loading plot in the same panel, superimposed. This allows you to easily relate groupings or effects in the scores to particular variable. Once you got the idea it can be pretty powerful. General remark: grouping structure is not always visible in a PCA, especially when it depends on a few variables only."),
-##               p("Have a look at the data sets in the sidebar, and discuss the results. Some questions will appear below the plots"), width = 8))
+tabEx3 <-
+  tabItem(tabName = "ex3",
+          h2("\nExercise 3: PLS Predictions"),
+          box(p("Nothing is easier than getting predictions out of a PLS model. Simply pick the number of latent variables you want, and hit the 'calculate' button. However, this does not give you any idea good your predictions will be. The normal strategy is to use crossvalidation for determining the optimal number of latent variables, and then to apply the model (created using the complete training set) to an unseen test set (if available...)."),
+              p("We'll have a look at three data sets. The wine data present an example of numerical prediction, the Lambrusco data of classification, and then there is the Mystery data set!"), width = 8))
 
-## tabEx3W <-
-##   tabItem(tabName = "ex3Wine",
-##           fluidRow(
-##             column(width = 6,
-##                    p("\nThe real power of PCA lies in combining score and loading plots. In the two leftmost plots below, you'll see both. Combining them in the biplot on the right leads in many cases to easier interpretation. ")),
-##             column(width = 4,
-##                    p("\nIn the dropdown boxes to the right you can select which components to visualize. (The lowest component will always be shown on the x axis - if you select the same component twice you'll be ignored ;P.)")),
-##             column(width = 1,
-##                    selectInput("PC1WB", label = "First PC",
-##                                choices = paste(1:10),
-##                                selected = "1")),
-##             column(width = 1,
-##                    selectInput("PC2WB", label = "Second PC",
-##                                choices = paste(1:10),
-##                               selected = "2"))),
-##           fluidRow(box(plotOutput(outputId = "PCABiplotWine"),
-##                        align = "center", width=12)),
-##           fluidRow(align = "center",
-##                    htmlOutput(outputId = "PCABiplotQuestionWine"))
-##           )
+tabEx3W <-
+  tabItem(tabName = "ex3Wine",
+          fluidRow(
+            column(width = 4,
+                   p("We'll predict the alcohol content of the individual wines based on the other twelve variables. To the right you see the crossvalidation results for the chosen scaling. You can change the scaling and choose the number of latent variables to in the prediction, and you will see the performance on a randomly selected test set of 50 samples (the others are in the training set).")),
+            column(width = 6,
+                   box(plotOutput(outputId = "PLScvW"),
+                       align = "center", width=12, height = 200)),
+            column(width = 2,
+                   selectInput("PLSScalingW",
+                               label = "Choose scaling",
+                               choices = c("Mean centering" = "mean",
+                                           "Autoscaling" = "auto",
+                                           "Pareto scaling" = "pareto",
+                                           "Log scaling" = "log",
+                                           "Sqrt scaling" = "sqrt",
+                                           "Log scaling plus autoscaling" = "logauto",
+                                           "Sqrt scaling plus autoscaling" = "sqrtauto")),
+                   selectInput("PLSWnLV", label = "Nr of LVs", choices = 1:10)
+                   )
+          ),
+          fluidRow(box(plotOutput(outputId = "PLSpredictionsW"),
+                       align = "center", width=6)),
+          fluidRow(align = "center",
+                   htmlOutput(outputId = "PLSPredictionQuestionWine"))
+          )
 
-## tabEx4 <- 
-##   tabItem(tabName = "ex4",
-##           h2("\nExercise 4: The Effects of Scaling"),
-##           box(p("So far, PCA seems easy enough - for visual inspection of a high-dimensional data set we usually concentrate on the first PCs only. However, scaling matters, and finding the most suitable scaling is usually hard to do without information on what the variables actually mean."),
-##               p("Here we present yet another wine data set from mass-spectrometry-based metabolomics. The variables are the intensities of the individual mass peaks. There are quite large differences between intensities, and this is going to influence the results"),
-##               p("Check out a couple of scalings, all commonly used in metabolomics, and discuss the effects on the scores and on the loadings. Note all scaling methods will be applied after mean-centering the data, which is mandatory before doing PCA."), width = 8))
+tabEx3L <-
+  tabItem(tabName = "ex3Lambrusco",
+          fluidRow(
+            column(width = 4,
+                   p("Here we are going to repeat the previous exercise, but now in a classification context. Validation and prediction error measures now are given as the number of misclassified cases, rather than as a sum of squares. You can change the scaling and choose the number of latent variables to in the prediction, and you will see the performance on a randomly selected test set of 25 samples (the others are in the training set).")),
+            column(width = 6,
+                   box(plotOutput(outputId = "PLScvL"),
+                       align = "center", width=12, height = 200)),
+            column(width = 2,
+                   selectInput("PLSScalingL",
+                               label = "Choose scaling",
+                               choices = c("Mean centering" = "mean",
+                                           "Autoscaling" = "auto",
+                                           "Pareto scaling" = "pareto",
+                                           "Log scaling" = "log",
+                                           "Sqrt scaling" = "sqrt",
+                                           "Log scaling plus autoscaling" = "logauto",
+                                           "Sqrt scaling plus autoscaling" = "sqrtauto")),
+                   selectInput("PLSWnLV", label = "Nr of LVs", choices = 1:10)
+                   )
+          ),
+          fluidRow(box(plotOutput(outputId = "PLSpredictionsL"),
+                       align = "center", width=8),
+                   box(tableOutput("PLSpredictionsLcrosstab"),
+                       align = "center", width = 4)),
+          fluidRow(align = "center",
+                   htmlOutput(outputId = "PLSPredictionQuestionLambo"))
+          )
 
-## tab4ExLS <-
-##   tabItem(tabName = "ex4Lamb",
-##           fluidRow(
-##             column(width = 6,
-##                    p("\nLambrusco is a sparkling red wine from Italy with a pretty bad reputation in the past: lemonade with alcohol was one of the more friendly connotations. However, there are some very good ones with distinct flavours and undeniable charm."),
-##                    p("This data set contains 76 samples, and we have 1,208 variables. The samples are divided into three groups, corresponding to the origin of the wine. A key feature of such data is that the majority of the feature intensities is comparable in size, but typically there are a few VERY LARGE numbers present.")),
-##             column(width = 4,
-##                    p("\nBelow, you'll see the score plot and the loading plot for a given scaling method. First, notice that the numbers at the axes of the score and loading plots are identical. Is this a coincidence?"),
-##                    p("In the dropdown box to the right you can select different options. This will lead to very different results below - the question to you is whether you understand the changes.")),
-##             column(width = 2,
-##                    selectInput("LScaling",
-##                                label = "Choose scaling",
-##                                choices = c("Mean centering" = "mean",
-##                                            "Autoscaling" = "auto",
-##                                            "Pareto scaling" = "pareto",
-##                                            "Log scaling" = "log",
-##                                            "Sqrt scaling" = "sqrt",
-##                                            "Log scaling plus autoscaling" = "logauto",
-##                                            "Sqrt scaling plus autoscaling" = "sqrtauto")),
-##                    actionButton("showLambrusco", "Go!"))),
-##           fluidRow(box(plotOutput(outputId = "LamboScores")),
-##                    box(plotOutput(outputId = "LamboLoadings"))),
-##           fluidRow(align = "center",
-##                    textOutput(outputId = "LambruscoQuestion"))
-##           )
-
-## tabEx5 <- 
-##   tabItem(tabName = "ex5",
-##           h2("\nExercise 5: Choosing the 'Correct' Number of Components"),
-##           box(p("We may wonder how many PCs to consider to obtain a good overview of the multivariate data. Of course, this depends on the data set. The original idea that it should be possible to distinguish 'significant' components from 'non-significant' components (signal versus noise) is more or less extinct, which is why we put the title word Correct in quotes. This is exploratory analysis! The question is: what plots show you something interesting?"),
-##               p("Nevertheless there are a couple of rules of thumb that can be used. First of all, we may decide that the first two components are enough, period. This is quite common in visualization applications. Secondly, we may require a certain percentage of variance explained - typically something like 80%, or, for data sets with more variables, 50%. Thirdly, we may look at scree plots."),
-##               p("Here you will look at a number of criteria for the wine data. Note that, again, the optimal number of components really depends on the scaling. In addition, the same exercise can be done for a data set with many more variables."), width = 8))
-
-## tab5ExW <-
-##   tabItem(tabName = "ex5Wine",
-##           fluidRow(
-##             column(width = 6,
-##                    p("\nThe wine data - just to remind you - 177 samples, three varieties, and 13 (very different) variables. You choose the scaling and you'll see the two types of screeplot (log variance, and cumulative percentage explained). Choose the number of components and you'll see the corresponding scores.")),
-##             column(width = 2,
-##                    selectInput("WineNComp", label = "Number of PCs",
-##                                choices = 1:13, 
-##                                selected = "2")),
-##             column(width = 2,
-##                    selectInput("WScalingScree",
-##                                label = "Choose scaling",
-##                                choices = c("Mean centering" = "mean",
-##                                            "Autoscaling" = "auto",
-##                                            "Pareto scaling" = "pareto",
-##                                            "Log scaling" = "log",
-##                                            "Sqrt scaling" = "sqrt",
-##                                            "Log scaling plus autoscaling" = "logauto",
-##                                            "Sqrt scaling plus autoscaling" = "sqrtauto"))),
-##             column(width = 2,
-##                    actionButton("showWineScree", "Go!"))
-##           ),
-##           fluidRow(
-##             column(width = 6,
-##                    box(plotOutput(outputId = "WineScree"), width = 12)),
-##             column(width = 6,
-##                    box(plotOutput(outputId = "WineScorePairs"), width = 12))),
-##           fluidRow(align = "center",
-##                    textOutput(outputId = "WineScreeQuestion"))
-##           )
-
-## tab5ExL <-
-##   tabItem(tabName = "ex5Lamb",
-##           fluidRow(
-##             column(width = 6,
-##                    p("\nThe Lambrusco data again: 76 samples, and 1,208 variables. You choose the scaling and you'll see the two types of screeplot (log variance, and cumulative percentage explained). Choose the number of components and you'll see the corresponding scores.")),
-##             column(width = 2,
-##                    selectInput("LambNComp", label = "Number of PCs",
-##                                choices = paste(1:10), 
-##                                selected = "2")),
-##             column(width = 2,
-##                    selectInput("LScalingScree",
-##                                label = "Choose scaling",
-##                                choices = c("Mean centering" = "mean",
-##                                            "Autoscaling" = "auto",
-##                                            "Pareto scaling" = "pareto",
-##                                            "Log scaling" = "log",
-##                                            "Sqrt scaling" = "sqrt",
-##                                            "Log scaling plus autoscaling" = "logauto",
-##                                            "Sqrt scaling plus autoscaling" = "sqrtauto"))),
-##             column(width = 2,
-##                    actionButton("showLambruscoScree", "Go!"))
-##           ),
-##           fluidRow(
-##             column(width = 6,
-##                    box(plotOutput(outputId = "LamboScree"), width = 12)),
-##             column(width = 6,
-##                    box(plotOutput(outputId = "LamboScorePairs"), width = 12))),
-##           fluidRow(align = "center",
-##                    textOutput(outputId = "LambruscoScreeQuestion"))
-##           )
+tabEx3M <-
+  tabItem(tabName = "ex3Mystery",
+          fluidRow(
+            column(width = 4,
+                   p("Again a classification problem, a two-class problem this time (control vs treatment). There are 40 samples, 20 for each class, and 2000 variables. Mean-centering is applied since the variables are measured on the same scales. You can choose the number of latent variables to in the prediction. You will see the prediction results for the training data as well as the cross-validated results.")),
+            column(width = 8,
+                   box(plotOutput(outputId = "PLScvM"),
+                       align = "center", width=8, height = 200),
+                   box(selectInput("PLSMnLV", label = "Nr of LVs",
+                                   choices = 1:10),
+                       align = "center", width = 2))
+          ),
+          fluidRow(box(plotOutput(outputId = "PLSpredictionsM"),
+                       align = "center", width=6)),
+          fluidRow(align = "center",
+                   htmlOutput(outputId = "PLSPredictionQuestionMystery"))
+)
 
 server <- function(input, output) {
   data(wines)
@@ -259,7 +208,8 @@ server <- function(input, output) {
   lambo.cl <- classvec2classmat(sample.labels)
 
   myscoreplot <- function(PCAobj, pcs = c(1,2),
-                          groups = rep(1, nrow(PCAscores))) {
+                          groups = rep(1, nrow(PCAscores)),
+                          main = "") {
     pcascores <- scores(PCAobj)
     PCAscores <- data.frame(PCa = pcascores[,pcs[1]],
                             PCb = pcascores[,pcs[2]],
@@ -270,9 +220,9 @@ server <- function(input, output) {
       PCAperc <- round(100*PCAobj$Xvar / PCAobj$Xtotvar, 1)
     }
     
-    xyplot(PCb ~ PCa, data = PCAscores, groups = groups,
-           xlab = paste("PC ", pcs[1], " (", PCAperc[1], "%)", sep = ""),
-           ylab = paste("PC ", pcs[2], " (", PCAperc[2], "%)", sep = ""),
+    xyplot(PCb ~ PCa, data = PCAscores, groups = groups, main = main,
+           xlab = paste("LV ", pcs[1], " (", PCAperc[1], "%)", sep = ""),
+           ylab = paste("LV ", pcs[2], " (", PCAperc[2], "%)", sep = ""),
            panel = function(...) {
              panel.abline(h = 0, v = 0, col = "gray", lty = 2)
              panel.xyplot(...)
@@ -293,12 +243,12 @@ server <- function(input, output) {
     
     output$WineScores <- renderPlot({
       wine.PCA <- PCA(WinesX())
-      myscoreplot(wine.PCA, groups = vintages)
+      myscoreplot(wine.PCA, groups = vintages, main = "PCA")
     })
     
     output$WinePLSScores <- renderPlot({
       wine.PLS <- plsr(wines.cl ~ WinesX())
-      myscoreplot(wine.PLS, groups = vintages)
+      myscoreplot(wine.PLS, groups = vintages, main = "PLS")
     })
     
     output$PLSWinequestion <- renderText({
@@ -325,7 +275,7 @@ server <- function(input, output) {
     })
     
     output$PLSCoefQuestionWine <- renderText({
-      "Which variables are most important in the predictions? Which are least important? Is this consistent for all scaling methods? Can you (to some extent, at least) understand the influence of the scaling methods on the coefficient sizes?"}) 
+      "Which variables are most important in the predictions? Which are least important? Is this consistent for all scaling methods? How does the number of LVs affect your conclusions? Can you (to some extent, at least) understand the influence of the scaling methods on the coefficient sizes?"}) 
   })
 
   observeEvent(input$lamboPLScoefs, {
@@ -493,7 +443,8 @@ server <- function(input, output) {
 body <- dashboardBody(
   tabItems(tabIntro,
            tabEx1, tabEx1W,
-           tabEx2, tabEx2W, tabEx2L))
+           tabEx2, tabEx2W, tabEx2L,
+           tabEx3, tabEx3W, tabEx3L, tabEx3M))
 
 ui <- dashboardPage(
   dashboardHeader(title = "PLS exercises"),

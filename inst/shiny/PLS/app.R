@@ -130,12 +130,9 @@ tabEx3 <-
 tabEx3W <-
   tabItem(tabName = "ex3Wine",
           fluidRow(
-            column(width = 4,
-                   p("We'll predict the alcohol content of the individual wines based on the other twelve variables. To the right you see the crossvalidation results for the chosen scaling. You can change the scaling and choose the number of latent variables to in the prediction, and you will see the performance on a randomly selected test set of 50 samples (the others are in the training set).")),
             column(width = 6,
-                   box(plotOutput(outputId = "PLScvW"),
-                       align = "center", width=12, height = 200)),
-            column(width = 2,
+                   p("We'll predict the alcohol content of the individual wines based on the other twelve variables. Below you see the crossvalidation results for the chosen scaling. You can change the scaling and choose the number of latent variables to in the prediction, and in the panel on the right you will see the performance on a randomly selected test set of 50 samples (the others are in the training set)."),
+                   plotOutput(outputId = "PLScvW", height = '300px'),
                    selectInput("PLSScalingW",
                                label = "Choose scaling",
                                choices = c("Mean centering" = "mean",
@@ -143,15 +140,17 @@ tabEx3W <-
                                            "Pareto scaling" = "pareto",
                                            "Log scaling" = "log",
                                            "Sqrt scaling" = "sqrt",
-                                           "Log scaling plus autoscaling" = "logauto",
-                                           "Sqrt scaling plus autoscaling" = "sqrtauto")),
-                   selectInput("PLSWnLV", label = "Nr of LVs", choices = 1:10)
-                   )
-          ),
-          fluidRow(box(plotOutput(outputId = "PLSpredictionsW"),
-                       align = "center", width=6)),
-          fluidRow(align = "center",
-                   htmlOutput(outputId = "PLSPredictionQuestionWine"))
+                                           "Log scaling plus autoscaling" =
+                                             "logauto",
+                                           "Sqrt scaling plus autoscaling" =
+                                             "sqrtauto")),
+                   selectInput("PLSWnLV", label = "Nr of LVs",
+                               selected = 2, choices = 1:10)),
+            column(width = 6,
+                   box(plotOutput(outputId = "PLSpredictionsW"),
+                       align = "center", width=NULL),
+                   htmlOutput(outputId = "PLSPredictionQuestionWine")
+                   ))
           )
 
 tabEx3L <-
@@ -172,7 +171,7 @@ tabEx3L <-
                                            "Sqrt scaling" = "sqrt",
                                            "Log scaling plus autoscaling" = "logauto",
                                            "Sqrt scaling plus autoscaling" = "sqrtauto")),
-                   selectInput("PLSWnLV", label = "Nr of LVs", choices = 1:10)
+                   selectInput("PLSLnLV", label = "Nr of LVs", choices = 1:10)
                    )
           ),
           fluidRow(box(plotOutput(outputId = "PLSpredictionsL"),
@@ -204,8 +203,15 @@ tabEx3M <-
 server <- function(input, output) {
   data(wines)
   wines.cl <- classvec2classmat(vintages)
+  set.seed(7)
+  winesTest.idx <- sort(sample(nrow(wines), 50))
+  winesTraining.idx <- (1:nrow(wines))[-winesTest.idx]
+
   data(lambrusco)
   lambo.cl <- classvec2classmat(sample.labels)
+  set.seed(7)
+  lamboTest.idx <- sample(nrow(X), 25)
+  lamboTraining.idx <- (1:nrow(X))[-lamboTest.idx]
 
   myscoreplot <- function(PCAobj, pcs = c(1,2),
                           groups = rep(1, nrow(PCAscores)),
@@ -312,133 +318,50 @@ server <- function(input, output) {
     output$PLSCoefQuestionLambo <- renderText({
       "For each of the three classes a separate regression vector is obtained. Which variables are specific for which classes? What characteristics are important?"}) 
   })
+
+  observeEvent(input$PLSScalingW, {
+    WinePLSX <- reactive(
+      switch(input$PLSScalingW,
+             "mean" = scale(wines, scale = FALSE),
+             "auto" = scale(wines),
+             "pareto" = scale(wines,
+                              scale = apply(wines, 2,
+                                            function(x)
+                                              sqrt(sd(x)))),
+             "log" = scale(log(wines + 1), scale = FALSE),
+             "sqrt" = scale(sqrt(wines), scale = FALSE),
+             "logauto" = scale(log(wines + 1)),
+             "sqrtauto" = scale(sqrt(wines))))
+  })
+
+  PLSmodW <- plsr(alcohol ~ ., data = as.data.frame(WinePLSX()),
+                  subset = winesTraining.idx,
+                  ncomp = 10, validation = "LOO")
+  
+  output$PLScvW <- renderPlot({
+    plot(PLSmodW, "validation", col = 4, lwd = 2, type = "h",
+         main = paste("PLS: LOO -", input$PLSScalingW),
+         ylim = c(0, max(c(RMSEP(PLSmodW, "CV")$val))))
+  })
+  
+  output$PLSpredictionsW <- renderPlot({
+    plspredictions <-
+      predict(PLSmodW,
+                newdata = WinesXPLS2[winesTest.idx,],
+                ncomp = input$PLSWnLV)[,1,1]
+      plot(plspredictions)
+      ## plot(WinesXPLS[winesTest.idx, "alcohol"], plspredictions,
+      ##      xlab = "True values", ylab = "Predicted values",
+      ##      main = paste("Wines, test set -", input$PLSWnLV, "components"))
+      ## abline(0, 1, col = 4)
+      ## myR2 <- mean((plspredictions - WinesXPLS[winesTest.idx, "alcohol"])^2)
+      ## legend("topleft", pch = -1, legend = paste("R2 =", round(myR2 , 2)),
+      ##        bty = "n")
+    })
+    
+    output$PLSPredictionQuestionWine <- renderText({"How close is the error estimate from the test data (right panel) to the crossvalidation estimate on the training data (left panel)?"})
+##  })
 }
-
-    
-  ## observeEvent(input$showLoadingsWine, {
-  ##   output$PCALoadingQuestionWine <- renderText({
-  ##     "Additional question: in the PC 1 vs PC 2 plot, which variables show high correlation?"
-  ##     })
-  ##   output$PCALoadingsWine <- renderPlot({
-  ##     if (input$PC2W == "none") {
-  ##       pcs <- as.numeric(input$PC1W)
-  ##     } else {
-  ##       pcs <- as.numeric(unique(c(input$PC1W, input$PC2W)))
-  ##     }
-      
-  ##     loadingplot(wine.PCA, pc = pcs, show.names = TRUE)
-  ##   })
-  ## })
-
-  ## output$PCABiplotWine <- renderPlot({
-  ##   pcs <- as.numeric(unique(c(input$PC1WB, input$PC2WB)))
-  ##   if (length(pcs) == 1)
-  ##     pcs <- c(pcs, min(setdiff(1:10, pcs)))
-  ##   pcs <- sort(pcs)
-
-  ##   par(mfrow = c(1,3))
-  ##   scoreplot(wine.PCA, pc = pcs, col = as.integer(vintages))
-  ##   loadingplot(wine.PCA, pc = pcs, show.names = TRUE)
-  ##   biplot(wine.PCA, pc = pcs, score.col = as.integer(vintages), show.names = "loadings")
-  ##   })
-  
-  ## output$PCABiplotQuestionWine <- renderText({
-  ##   "Note that the percentage of variance explained at the axes is equal in all plots. Also note that the loading axes in the biplot have been adapted to fit the loadings comfortably in the plot.<br><b>Question</b>: which variables are most discriminative for each wine? That is, which do you expect to have high values in a particular wine, and which have low values?"})
-  
-  ## observeEvent(input$showLambrusco, {
-  ##   Lambo.PCA <- reactive(
-  ##     switch(input$LScaling,
-  ##            "mean" = PCA(scale(X, scale = FALSE)),
-  ##            "auto" = PCA(scale(X)),
-  ##            "pareto" = PCA(scale(X, scale = apply(X, 2, function(x) sqrt(sd(x))))),
-  ##            "log" = PCA(scale(log(X + 1), scale = FALSE)),
-  ##            "sqrt" = PCA(scale(sqrt(X), scale = FALSE)),
-  ##            "logauto" = PCA(scale(log(X + 1))),
-  ##            "sqrtauto" = PCA(scale(sqrt(X))))
-  ##   )
-    
-  ##   output$LambruscoQuestion <- renderText({
-  ##     "Which scaling separates the groups best? One of the scalings leads to a very strange division in two groups - have you found it?"
-  ##   })
-    
-  ##   output$LamboLoadings <- renderPlot({
-  ##     loadingplot(Lambo.PCA(), pc = 1:2)
-  ##   })
-  ##   output$LamboScores <- renderPlot({
-  ##     myscoreplot(Lambo.PCA(), pc = 1:2, groups = sample.labels)
-  ##   })
-
-  ## })
-
-  ## observeEvent(input$showWineScree, {
-  ##   output$WineScreeQuestion <- renderText({
-  ##     "How many PCs would you pick?"})
-    
-  ##   Wine.PCAScr <- reactive({
-  ##     switch(input$WScalingScree,
-  ##            "mean" = PCA(scale(wines, scale = FALSE)),
-  ##            "auto" = PCA(scale(wines)),
-  ##            "pareto" = PCA(scale(wines, scale =
-  ##                                      apply(wines, 2, function(x) sqrt(sd(x))))),
-  ##            "log" = PCA(scale(log(wines + 1), scale = FALSE)),
-  ##            "sqrt" = PCA(scale(sqrt(wines), scale = FALSE)),
-  ##            "logauto" = PCA(scale(log(wines + 1))),
-  ##            "sqrtauto" = PCA(scale(sqrt(wines))))
-  ##   })
-    
-  ##   output$WineScree <- renderPlot({
-  ##     par(mfrow = c(2,1), mar = c(4, 4.2, 0, 1))
-  ##     screeplot(Wine.PCAScr())
-  ##     abline(h = 0, col = "gray", lty = 2)
-  ##     screeplot(Wine.PCAScr(), ylim = c(0, 100), type = "percentage")
-  ##     abline(h = c(0, 100), col = "gray", lty = 2)
-  ##   })
-    
-  ##   output$WineScorePairs <- renderPlot({
-  ##     if (as.integer(input$WineNComp) < 3) {
-  ##       scoreplot(Wine.PCAScr(), col = wine.classes, pch = wine.classes)
-  ##     } else {
-  ##       splom(scores(Wine.PCAScr(), as.integer(input$WineNComp)),
-  ##             pscales = 0, groups = vintages, pch = ".", cex = 2)
-  ##     }
-  ##   })
-  ## })  
-
-  ## observeEvent(input$showLambruscoScree, {
-  ##   output$LambruscoScreeQuestion <- renderText({
-  ##     "Here we limit your choice to the first ten PCs. There are more - how many PCs could you choose at most?"})
-    
-  ##   Lambo.PCAScr <- reactive({
-  ##     switch(input$LScalingScree,
-  ##            "mean" = PCA(scale(X, scale = FALSE)),
-  ##            "auto" = PCA(scale(X)),
-  ##            "pareto" = PCA(scale(X, scale =
-  ##                                      apply(X, 2, function(x) sqrt(sd(x))))),
-  ##            "log" = PCA(scale(log(X + 1), scale = FALSE)),
-  ##            "sqrt" = PCA(scale(sqrt(X), scale = FALSE)),
-  ##            "logauto" = PCA(scale(log(X + 1))),
-  ##            "sqrtauto" = PCA(scale(sqrt(X))))
-  ##   })
-    
-  ##   output$LamboScree <- renderPlot({
-  ##     par(mfrow = c(2,1), mar = c(4, 4.2, 0, 1))
-  ##     screeplot(Lambo.PCAScr(), npc = 10)
-  ##     abline(h = 0, col = "gray", lty = 2)
-  ##     screeplot(Lambo.PCAScr(), npc = 10,
-  ##               ylim = c(0, 100), type = "percentage")
-  ##     abline(h = c(0, 100), col = "gray", lty = 2)
-  ##   })
-    
-  ##   output$LamboScorePairs <- renderPlot({
-  ##     if (as.integer(input$LambNComp) < 3) {
-  ##       scoreplot(Lambo.PCAScr(), col = as.integer(sample.labels),
-  ##                 pch = as.integer(sample.labels))
-  ##     } else {
-  ##       splom(scores(Lambo.PCAScr(), as.integer(input$LambNComp)),
-  ##             pscales = 0, groups = sample.labels, pch = ".", cex = 2)
-  ##     }
-  ##   })
-  ## })  
 
 body <- dashboardBody(
   tabItems(tabIntro,

@@ -132,8 +132,8 @@ tabEx3W <-
           fluidRow(
             column(width = 6,
                    p("We'll predict the alcohol content of the individual wines based on the other twelve variables. Below you see the crossvalidation results for the chosen scaling. You can change the scaling and choose the number of latent variables to in the prediction, and in the panel on the right you will see the performance on a randomly selected test set of 50 samples (the others are in the training set)."),
-                   plotOutput(outputId = "PLScvW", height = '300px'),
-                   selectInput("PLSScalingW",
+                   column(width = 6,
+                          selectInput("PLSScalingW",
                                label = "Choose scaling",
                                choices = c("Mean centering" = "mean",
                                            "Autoscaling" = "auto",
@@ -143,9 +143,13 @@ tabEx3W <-
                                            "Log scaling plus autoscaling" =
                                              "logauto",
                                            "Sqrt scaling plus autoscaling" =
-                                             "sqrtauto")),
-                   selectInput("PLSWnLV", label = "Nr of LVs",
-                               selected = 2, choices = 1:10)),
+                                             "sqrtauto"))),
+                   column(width = 4,
+                          selectInput("PLSWnLV", label = "Nr of LVs",
+                                      selected = 2, choices = 1:10)),
+                   column(width = 2,
+                          actionButton("GoPLSpredictionsW", "Go!")),
+                   plotOutput(outputId = "PLScvW", height = '300px')),
             column(width = 6,
                    box(plotOutput(outputId = "PLSpredictionsW"),
                        align = "center", width=NULL),
@@ -204,8 +208,6 @@ server <- function(input, output) {
   data(wines)
   wines.cl <- classvec2classmat(vintages)
   set.seed(7)
-  winesTest.idx <- sort(sample(nrow(wines), 50))
-  winesTraining.idx <- (1:nrow(wines))[-winesTest.idx]
 
   data(lambrusco)
   lambo.cl <- classvec2classmat(sample.labels)
@@ -320,47 +322,62 @@ server <- function(input, output) {
   })
 
   observeEvent(input$PLSScalingW, {
-    WinePLSX <- reactive(
+    set.seed(7)
+    winesTest.idx <- sort(sample(nrow(wines), 50))
+    winesTraining.idx <- (1:nrow(wines))[-winesTest.idx]
+
+    WinePLSX.tr <-
       switch(input$PLSScalingW,
-             "mean" = scale(wines, scale = FALSE),
-             "auto" = scale(wines),
-             "pareto" = scale(wines,
-                              scale = apply(wines, 2,
+             "mean" = scale(wines[winesTraining.idx,], scale = FALSE),
+             "auto" = scale(wines[winesTraining.idx,]),
+             "pareto" = scale(wines[winesTraining.idx,],
+                              scale = apply(wines[winesTraining.idx,], 2,
                                             function(x)
                                               sqrt(sd(x)))),
-             "log" = scale(log(wines + 1), scale = FALSE),
-             "sqrt" = scale(sqrt(wines), scale = FALSE),
-             "logauto" = scale(log(wines + 1)),
-             "sqrtauto" = scale(sqrt(wines))))
-  })
-
-  PLSmodW <- plsr(alcohol ~ ., data = as.data.frame(WinePLSX()),
-                  subset = winesTraining.idx,
-                  ncomp = 10, validation = "LOO")
+             "log" = scale(log(wines[winesTraining.idx,] + 1), scale = FALSE),
+             "sqrt" = scale(sqrt(wines[winesTraining.idx,]), scale = FALSE),
+             "logauto" = scale(log(wines[winesTraining.idx,] + 1)),
+             "sqrtauto" = scale(sqrt(wines[winesTraining.idx,])))
+    WinePLSX.tst <-
+      switch(input$PLSScalingW,
+             "mean" = scale(wines[winesTest.idx,], scale = FALSE),
+             "auto" = scale(wines[winesTest.idx,]),
+             "pareto" = scale(wines[winesTest.idx,],
+                              scale = apply(wines[winesTest.idx,], 2,
+                                            function(x)
+                                              sqrt(sd(x)))),
+             "log" = scale(log(wines[winesTest.idx,] + 1), scale = FALSE),
+             "sqrt" = scale(sqrt(wines[winesTest.idx,]), scale = FALSE),
+             "logauto" = scale(log(wines[winesTest.idx,] + 1)),
+             "sqrtauto" = scale(sqrt(wines[winesTest.idx,])))
   
-  output$PLScvW <- renderPlot({
-    plot(PLSmodW, "validation", col = 4, lwd = 2, type = "h",
-         main = paste("PLS: LOO -", input$PLSScalingW),
-         ylim = c(0, max(c(RMSEP(PLSmodW, "CV")$val))))
-  })
-  
-  output$PLSpredictionsW <- renderPlot({
-    plspredictions <-
-      predict(PLSmodW,
-                newdata = WinesXPLS2[winesTest.idx,],
-                ncomp = input$PLSWnLV)[,1,1]
-      plot(plspredictions)
-      ## plot(WinesXPLS[winesTest.idx, "alcohol"], plspredictions,
-      ##      xlab = "True values", ylab = "Predicted values",
-      ##      main = paste("Wines, test set -", input$PLSWnLV, "components"))
-      ## abline(0, 1, col = 4)
-      ## myR2 <- mean((plspredictions - WinesXPLS[winesTest.idx, "alcohol"])^2)
-      ## legend("topleft", pch = -1, legend = paste("R2 =", round(myR2 , 2)),
-      ##        bty = "n")
-    })
+    PLSmodW <- plsr(alcohol ~ ., data = as.data.frame(WinePLSX.tr),
+                    ncomp = 10, validation = "LOO")
     
-    output$PLSPredictionQuestionWine <- renderText({"How close is the error estimate from the test data (right panel) to the crossvalidation estimate on the training data (left panel)?"})
-##  })
+    output$PLScvW <- renderPlot({
+      plot(PLSmodW, "validation", col = 4, lwd = 2, type = "h",
+           ylab = "RMSECV",
+           main = paste("PLS: LOO -", input$PLSScalingW))
+    })
+
+    observeEvent(input$GoPLSpredictionsW, {  
+      plspredictions <- 
+        c(predict(PLSmodW, newdata = as.data.frame(WinePLSX.tst),
+                  ncomp = as.numeric(input$PLSWnLV)))
+      
+      output$PLSpredictionsW <- renderPlot({
+        plot(WinePLSX.tst[, "alcohol"], plspredictions,
+             xlab = "True values", ylab = "Predicted values",
+             main = paste("Wines, test set -", input$PLSWnLV, "components"))
+        abline(0, 1, col = 4)
+        myRMS <- mean((plspredictions - WinePLSX.tst[, "alcohol"])^2)
+        legend("topleft", pch = -1, legend = paste("RMS =", round(myRMS , 4)),
+               bty = "n")
+      })
+      
+      output$PLSPredictionQuestionWine <- renderText({"How close is the error estimate from the test data (right panel) to the crossvalidation estimate on the training data (left panel)?"})
+    })
+  })
 }
 
 body <- dashboardBody(

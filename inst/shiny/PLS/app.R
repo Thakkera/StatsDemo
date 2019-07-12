@@ -131,19 +131,19 @@ tabEx3W <-
   tabItem(tabName = "ex3Wine",
           fluidRow(
             column(width = 6,
-                   p("We'll predict the alcohol content of the individual wines based on the other twelve variables. Below you see the crossvalidation results for the chosen scaling. You can change the scaling and choose the number of latent variables to in the prediction, and in the panel on the right you will see the performance on a randomly selected test set of 50 samples (the others are in the training set)."),
+                   p("We'll predict the alcohol content of the individual wines based on the other twelve variables. Below you see the crossvalidation results for the chosen scaling. You can change the scaling and choose the number of latent variables to in the prediction, and in the panel on the right you will see the performance on a randomly selected test set of 50 samples (the others are in the training set). What do you expect?"),
                    column(width = 6,
                           selectInput("PLSScalingW",
-                               label = "Choose scaling",
-                               choices = c("Mean centering" = "mean",
-                                           "Autoscaling" = "auto",
-                                           "Pareto scaling" = "pareto",
-                                           "Log scaling" = "log",
-                                           "Sqrt scaling" = "sqrt",
-                                           "Log scaling plus autoscaling" =
-                                             "logauto",
-                                           "Sqrt scaling plus autoscaling" =
-                                             "sqrtauto"))),
+                                      label = "Choose scaling",
+                                      choices = c("Mean centering" = "mean",
+                                                  "Autoscaling" = "auto",
+                                                  "Pareto scaling" = "pareto",
+                                                  "Log scaling" = "log",
+                                                  "Sqrt scaling" = "sqrt",
+                                                  "Log scaling plus autoscaling" =
+                                                    "logauto",
+                                                  "Sqrt scaling plus autoscaling" =
+                                                    "sqrtauto"))),
                    column(width = 4,
                           selectInput("PLSWnLV", label = "Nr of LVs",
                                       selected = 2, choices = 1:10)),
@@ -207,8 +207,7 @@ tabEx3M <-
 server <- function(input, output) {
   data(wines)
   wines.cl <- classvec2classmat(vintages)
-  set.seed(7)
-
+  
   data(lambrusco)
   lambo.cl <- classvec2classmat(sample.labels)
 
@@ -319,8 +318,6 @@ server <- function(input, output) {
   })
 
   ## Several problems here:
-  ## 1) the prediction plot does not change when changing the number of latent variables
-  ## 2) the prediction RMSE is too low, much lower than the CV.
   ## 3) the log RMSE values (and probably also the sqrt ones) are not on the same scale, so backtransformation is necessary for a good comparison. Alternatively, a question for the student
   ## 4) before hitting Go! people should think about the optimal number of latent variables.
   observeEvent(input$PLSScalingW, {
@@ -328,71 +325,85 @@ server <- function(input, output) {
     winesTest.idx <- sort(sample(nrow(wines), 50))
     winesTraining.idx <- (1:nrow(wines))[-winesTest.idx]
 
+    alco.tr <- wines[winesTraining.idx, "alcohol"]
+    alco.tst <- wines[winesTest.idx, "alcohol"]
+    
     WinePLSX.tr <-
       switch(input$PLSScalingW,
-             "mean" = scale(wines[winesTraining.idx,], scale = FALSE),
-             "auto" = scale(wines[winesTraining.idx,]),
-             "pareto" = scale(wines[winesTraining.idx,],
-                              scale = apply(wines[winesTraining.idx,], 2,
+             "mean" = scale(wines[winesTraining.idx,-1], scale = FALSE),
+             "auto" = scale(wines[winesTraining.idx,-1]),
+             "pareto" = scale(wines[winesTraining.idx,-1],
+                              scale = apply(wines[winesTraining.idx,-1], 2,
                                             function(x)
                                               sqrt(sd(x)))),
-             "log" = scale(log(wines[winesTraining.idx,] + 1), scale = FALSE),
-             "sqrt" = scale(sqrt(wines[winesTraining.idx,]), scale = FALSE),
-             "logauto" = scale(log(wines[winesTraining.idx,] + 1)),
-             "sqrtauto" = scale(sqrt(wines[winesTraining.idx,])))
+             "log" = scale(log(wines[winesTraining.idx,-1] + 1), scale = FALSE),
+             "sqrt" = scale(sqrt(wines[winesTraining.idx,-1]), scale = FALSE),
+             "logauto" = scale(log(wines[winesTraining.idx,-1] + 1)),
+             "sqrtauto" = scale(sqrt(wines[winesTraining.idx,-1])))
     WinePLSX.tst <-
       switch(input$PLSScalingW,
-             "mean" = scale(wines[winesTest.idx,],
-                            center = colMeans(wines[winesTraining.idx,]),
+             "mean" = scale(wines[winesTest.idx,-1],
+                            center = colMeans(wines[winesTraining.idx,-1]),
                             scale = FALSE),
-             "auto" = scale(wines[winesTest.idx,],
-                            center = colMeans(wines[winesTraining.idx,]),
-                            scale = apply(wines[winesTraining.idx,], 2, sd)),
-             "pareto" = scale(wines[winesTest.idx,],
-                              center = colMeans(wines[winesTraining.idx,]),
-                              scale = apply(wines[winesTraining.idx,], 2,
+             "auto" = scale(wines[winesTest.idx,-1],
+                            center = colMeans(wines[winesTraining.idx,-1]),
+                            scale = apply(wines[winesTraining.idx,-1], 2, sd)),
+             "pareto" = scale(wines[winesTest.idx,-1],
+                              center = colMeans(wines[winesTraining.idx,-1]),
+                              scale = apply(wines[winesTraining.idx,-1], 2,
                                             function(x)
                                               sqrt(sd(x)))),
              "log" =
-               scale(log(wines[winesTest.idx,] + 1),
-                     center = colMeans(log(wines[winesTraining.idx,] + 1)), 
+               scale(log(wines[winesTest.idx,-1] + 1),
+                     center = colMeans(log(wines[winesTraining.idx,-1] + 1)), 
                      scale = FALSE),
              "sqrt" =
-               scale(sqrt(wines[winesTest.idx,]),
-                     center = colMeans(sqrt(wines[winesTraining.idx,])),
+               scale(sqrt(wines[winesTest.idx,-1]),
+                     center = colMeans(sqrt(wines[winesTraining.idx,-1])),
                      scale = FALSE),
              "logauto" =
-               scale(log(wines[winesTest.idx,] + 1),
-                     scale = apply(log(wines[winesTraining.idx,] + 1), 2, sd),
-                     center = colMeans(log(wines[winesTraining.idx,] + 1))),
+               scale(log(wines[winesTest.idx,-1] + 1),
+                     scale = apply(log(wines[winesTraining.idx,-1] + 1), 2, sd),
+                     center = colMeans(log(wines[winesTraining.idx,-1] + 1))),
              "sqrtauto" =
-               scale(sqrt(wines[winesTest.idx,]),
-                     scale = apply(sqrt(wines[winesTraining.idx,]), 2, sd),
-                     center = colMeans(sqrt(wines[winesTraining.idx,]))))
-  
-    PLSmodW <- plsr(alcohol ~ ., data = as.data.frame(WinePLSX.tr),
-                    ncomp = 10, validation = "LOO")
+               scale(sqrt(wines[winesTest.idx,-1]),
+                     scale = apply(sqrt(wines[winesTraining.idx,-1]), 2, sd),
+                     center = colMeans(sqrt(wines[winesTraining.idx,-1]))))
+
+    winePLS.df <- cbind(data.frame(alcohol = c(alco.tr, alco.tst),
+                               type = rep(c("training", "test"),
+                                          c(length(alco.tr),
+                                            length(alco.tst)))),
+                    rbind(as.data.frame(WinePLSX.tr),
+                          as.data.frame(WinePLSX.tst)))
+                             
+    PLSmodW <- plsr(alcohol ~ . - type, data = winePLS.df,
+                    subset = type == "training", ncomp = 10,
+                    validation = "LOO")
     
     output$PLScvW <- renderPlot({
       plot(PLSmodW, "validation", col = 4, lwd = 2, type = "h",
-           ylab = "RMSECV",
+           ylab = "RMSECV", estimate = "CV",
            main = paste("PLS: LOO -", input$PLSScalingW))
     })
-
-    observeEvent(input$PLSScalingW,{
-      observeEvent(input$GoPLSpredictionsW, {  
-        plspredictions <- 
-          c(predict(PLSmodW, newdata = as.data.frame(WinePLSX.tst),
-                    ncomp = as.numeric(input$PLSWnLV)))
-        
-        output$PLSpredictionsW <- renderPlot({
-          plot(WinePLSX.tst[, "alcohol"], plspredictions,
-               xlab = "True values", ylab = "Predicted values",
-               main = paste("Wines, test set -", input$PLSWnLV, "components"))
-          abline(0, 1, col = 4)
-          myRMS <- mean((plspredictions - WinePLSX.tst[, "alcohol"])^2)
-          legend("topleft", pch = -1, legend = paste("RMS =", round(myRMS , 4)),
-                 bty = "n")
+ 
+    observeEvent(input$GoPLSpredictionsW, {  
+      observeEvent(input$PLSWnLV, {
+        observeEvent(input$PLSScalingW, {
+          plspredictions <- 
+            c(predict(PLSmodW, newdata = winePLS.df[winePLS.df$type == "test",],
+                      ncomp = as.numeric(input$PLSWnLV)))
+          
+          output$PLSpredictionsW <- renderPlot({
+            plot(alco.tst, plspredictions,
+                 xlab = "True values", ylab = "Predicted values",
+                 main = paste("Wines, test set -", input$PLSWnLV, "components"))
+            abline(0, 1, col = 4)
+            myRMS <- sqrt(mean((plspredictions - alco.tst)^2))
+            legend("topleft", pch = -1,
+                   legend = paste("RMS =", round(myRMS , 3)),
+                   bty = "n")
+          })
         })
       })
       

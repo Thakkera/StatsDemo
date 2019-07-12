@@ -160,31 +160,32 @@ tabEx3W <-
 tabEx3L <-
   tabItem(tabName = "ex3Lambrusco",
           fluidRow(
-            column(width = 4,
-                   p("Here we are going to repeat the previous exercise, but now in a classification context. Validation and prediction error measures now are given as the number of misclassified cases, rather than as a sum of squares. You can change the scaling and choose the number of latent variables to in the prediction, and you will see the performance on a randomly selected test set of 25 samples (the others are in the training set).")),
             column(width = 6,
-                   box(plotOutput(outputId = "PLScvL"),
-                       align = "center", width=12, height = 200)),
-            column(width = 2,
-                   selectInput("PLSScalingL",
-                               label = "Choose scaling",
-                               choices = c("Mean centering" = "mean",
-                                           "Autoscaling" = "auto",
-                                           "Pareto scaling" = "pareto",
-                                           "Log scaling" = "log",
-                                           "Sqrt scaling" = "sqrt",
-                                           "Log scaling plus autoscaling" = "logauto",
-                                           "Sqrt scaling plus autoscaling" = "sqrtauto")),
-                   selectInput("PLSLnLV", label = "Nr of LVs", choices = 1:10)
-                   )
-          ),
-          fluidRow(box(plotOutput(outputId = "PLSpredictionsL"),
-                       align = "center", width=8),
-                   box(tableOutput("PLSpredictionsLcrosstab"),
-                       align = "center", width = 4)),
-          fluidRow(align = "center",
-                   htmlOutput(outputId = "PLSPredictionQuestionLambo"))
-          )
+                   p("Here we are going to repeat the previous exercise, but now in a classification context. Validation and prediction error measures now are given as the number of misclassified cases, rather than as a sum of squares. You can change the scaling and choose the number of latent variables to in the prediction, and you will see the performance on a randomly selected test set of 25 samples (the others are in the training set)."),
+                   column(width = 6,
+                          selectInput("PLSScalingL",
+                                      label = "Choose scaling",
+                                      choices = c("Mean centering" = "mean",
+                                                  "Autoscaling" = "auto",
+                                                  "Pareto scaling" = "pareto",
+                                                  "Log scaling" = "log",
+                                                  "Sqrt scaling" = "sqrt",
+                                                  "Log scaling plus autoscaling" = "logauto",
+                                                  "Sqrt scaling plus autoscaling" = "sqrtauto"))),
+                   column(width = 4,
+                          selectInput("PLSLnLV", label = "Nr of LVs",
+                                      choices = 1:10)),
+                   column(width = 2,
+                          actionButton("GoPLSpredictionsL", "Go!")),
+                   plotOutput(outputId = "PLScvL", height = 300)),
+            column(width = 6,
+                   box(plotOutput(outputId = "PLSpredictionsL"),
+                       align = "center", width=NULL),
+                   column(width = 6,
+                          tableOutput("PLSpredictionsLcrosstab"))
+                   column(width = 6,
+                          htmlOutput(outputId = "PLSPredictionQuestionLambo")))
+          ))
 
 tabEx3M <-
   tabItem(tabName = "ex3Mystery",
@@ -484,6 +485,12 @@ server <- function(input, output) {
       output$PLSPredictionQuestionWine <- renderText({"How close is the error estimate from the test data (right panel) to the crossvalidation estimate on the training data (left panel)?"})
     })
   })
+
+  ## Insert Lambrusco stuff here:
+  ## 1) crossval results showing for each scaling the number of misclassified cases
+  ## 2) test set prediction figure in terms of class probabilities (think how to show this)
+  ## 3) crosstable for the test se
+  ## 4) a questiont
 }
 
 body <- dashboardBody(

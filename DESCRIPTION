@@ -5,6 +5,5 @@ Version: 0.2.0
 Author: Ron Wehrens
 Maintainer: Ron Wehrens <ron.wehrens@gmail.com>
 Description: R package containing demos for the EBI metabolomics courses in Hinxton. The students should not really type R code but simply call a few functions. Ideally students work in couples, and discuss all they see. After each exercise general comments are discussed in the whole group. This version contains only the statistics exercises, for the 2016 edition.
-Depends: R (>= 3.5.0)
 License: GPL-2
-Depends: pls, lattice, ptw, scales
+Depends: R (>= 3.5.0), pls, lattice, ptw, scales, shiny

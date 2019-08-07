@@ -32,13 +32,13 @@ tabEx1 <-
   tabItem(tabName = "ex1",
           h2("\nExercise 1: Score Plots"),
           box(p("Just like PCA, PLS does dimension reduction: new variables are created (linear combinations of the original ones) but PLS takes into account the dependent variable, i.e., the variable we want to predict, too!"),
-              p("The next exercise compares PCA and PLS scores."), width = 8))
+              p("The next exercise compares PCA and PLS scores of the wine data."), width = 8))
 
 tabEx1W <- 
   tabItem(tabName = "ex1Wine",
           fluidRow(
             column(width = 6,
-                   p("\nNow consider the wine data: 177 different bottles from three varieties. We have measured 13 variables for each bottle. Left you'll see the PCA scores - right the PLS scores (we are predicting class label here). We are concentrating on the first two components here. What differences do you observe? Try out different scaling methods.")),
+                   p("\nNow consider the wine data: 177 different bottles from three varieties. We have measured 13 variables for each bottle. Left you'll see the PCA scores - right the PLS scores (we are predicting the variety here, so it is a classification task). We are concentrating on the first two components here. What differences do you observe? Try out different scaling methods.")),
             column(width = 4,
                    selectInput("WScaling",
                                label = "Choose scaling",
@@ -51,8 +51,8 @@ tabEx1W <-
                                              "logauto",
                                            "Sqrt scaling plus autoscaling" =
                                              "sqrtauto"))),
-           column(width = 2,
-                  actionButton("showPCAPLSscores", "Go!"))
+            column(width = 2,
+                   actionButton("showPCAPLSscores", "Go!"))
           ),
           fluidRow(
             box(plotOutput(outputId = "WineScores"), width=6),
@@ -65,7 +65,7 @@ tabEx2 <-
   tabItem(tabName = "ex2",
           h2("\nExercise 2: regression coefficients"),
           box(p("PLS loadings have more or less the same interpretation as PCA loadings. However, since PLS is a regression technique in most cases one considers the loadings as technical issues (although opinions differ here, too), and concentrates on the regression vector. One definite advantage of the regression vector is that it is, well, a vector. It can be visualized pretty easily, whereas the loadings of a model with say four components are more difficult. What is more: PLS models not only have loadings for the dependent variables (the X matrix) but if Y is a matrix there are also Y loadings."), 
-              p("In this exercise we'll focus on the regression vectors rather than on the loadings. We'll be looking at two wine data sets."), width = 8))
+              p("In this exercise we'll focus on the regression vectors rather than on the loadings. We'll be looking at two the wine data sets already encountered in the PCA exercises."), width = 8))
 
 tabEx2W <-
   tabItem(tabName = "ex2Wine",
@@ -95,7 +95,7 @@ tabEx2L <-
   tabItem(tabName = "ex2Lambo",
           fluidRow(
             column(width = 6,
-                   p("\nPLS can also be used in a classification context. With two classes we only need use labels like 0 and 1 (with a cutoff of 0.5) or -1 and 1 (with a cutoff of 0). For more than three classes, PLS is basically modelling class memberships, so for each of the classes the probability of belonging to that class. Here, we are predicting origin (three possibilities) for the Lambrusco data. Choose the minimal and maximal variable number to zoom in on particular areas in the regression vector.")),
+                   p("\nPLS can also be used in a classification context as we saw in the very first example. With two classes we only need use labels like 0 and 1 (with a cutoff of 0.5) or -1 and 1 (with a cutoff of 0). For more than three classes, PLS is basically modelling class memberships, so for each of the classes the probability of belonging to that class. Here, we are predicting origin (three possibilities) for the Lambrusco data. Choose the minimal and maximal variable number to zoom in on particular areas in the regression vector.")),
             column(width = 3,
                    selectInput("LScalingC",
                                label = "Choose scaling",
@@ -108,10 +108,10 @@ tabEx2L <-
                                            "Sqrt scaling plus autoscaling" = "sqrtauto")),
                    selectInput("LnLV", label = "Nr of LVs", choices = 1:15)),
             column(width = 2,
-                   selectInput("VMin", label = "Min",
+                   selectInput("VMin", label = "Min var",
                                choices = 100*0:11 + 1,
                                selected = 1),
-                   selectInput("VMax", label = "Max",
+                   selectInput("VMax", label = "Max var",
                                choices = 100*0:11 + 108,
                                selected = 1208)),
             column(width = 1,
@@ -182,7 +182,7 @@ tabEx3L <-
                    box(plotOutput(outputId = "PLSpredictionsL"),
                        align = "center", width=NULL),
                    column(width = 6,
-                          tableOutput("PLSpredictionsLcrosstab"))
+                          tableOutput("PLSpredictionsLcrosstab")),
                    column(width = 6,
                           htmlOutput(outputId = "PLSPredictionQuestionLambo")))
           ))
@@ -315,7 +315,7 @@ server <- function(input, output) {
     })
     
     output$PLSCoefQuestionLambo <- renderText({
-      "For each of the three classes a separate regression vector is obtained. Which variables are specific for which classes? What characteristics are important?"}) 
+      "For each of the three classes a separate regression vector is obtained. Which variables are specific for which classes? What characteristics are important? Are there any variables that are quite clearly unimportant?"}) 
   })
 
   ## Several problems here:

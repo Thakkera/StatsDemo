@@ -30,13 +30,13 @@ sidebar <- dashboardSidebar(
 tabIntro <-
   tabItem(tabName = "intro",
           h2("Introduction"),
-          box(p("Principal Component Analysis (PCA) is a projection method allowing the user to get na global overview of a data set. Here, we are going to simply apply PCA to a couple of data sets, to get a feel for what is possible, and how to interpret the plots.")),
+          box(p("Principal Component Analysis (PCA) is a projection method, leading to a global graphical overview of a data set. Here, we are going to simply apply PCA to a couple of data sets, to get a feel for what is possible, and how to interpret the plots.")),
           box(p("Go through the list of exercises in the sidebar, and you'll know the most important characteristics and features of PCA!")))
 
 tabEx1 <-
   tabItem(tabName = "ex1",
           h2("\nExercise 1: Score Plots"),
-          box(p("Score plots show the positions of the samples (rows in the original data matrix) in the PC space. So this type of plot tells you something about which samples are similar (in this subspace!) and which are not."),
+          box(p("Score plots show the positions of the samples (rows in the original data matrix) in PC space. So this type of plot tells you something about which samples are similar (in this subspace!) and which are not."),
               p("Have a look at the data sets in the sidebar, and discuss the results. Some questions will appear below the plots"), width = 8))
 
 tabEx1S <-
@@ -125,7 +125,7 @@ tabEx2W <-
 tabEx3 <-
   tabItem(tabName = "ex3",
           h2("\nExercise 3: Biplots"),
-          box(p("Biplots show a scoreplot and a loading plot in the same panel, superimposed. This allows you to easily relate groupings or effects in the scores to particular variable. Once you got the idea it can be pretty powerful. General remark: grouping structure is not always visible in a PCA, especially when it depends on a few variables only."),
+          box(p("Biplots show a scoreplot and a loading plot in the same panel, superimposed. This allows you to easily relate groupings in the scores to particular variables. Once you got the idea it can be pretty powerful. General remark: grouping structure is not always visible in a PCA, especially when it depends on a few variables only."),
               p("Have a look at the data sets in the sidebar, and discuss the results. Some questions will appear below the plots"), width = 8))
 
 tabEx3W <-
@@ -160,11 +160,11 @@ tab4ExLS <-
   tabItem(tabName = "ex4Lamb",
           fluidRow(
             column(width = 6,
-                   p("\nLambrusco is a sparkling red wine from Italy with a pretty bad reputation in the past: lemonade with alcohol was one of the more friendly connotations. However, there are some very good ones with distinct flavours and undeniable charm."),
-                   p("This data set contains 76 samples, and we have 1,208 variables. The samples are divided into three groups, corresponding to the origin of the wine. A key feature of such data is that the majority of the feature intensities is comparable in size, but typically there are a few VERY LARGE numbers present.")),
+                   p("\nLambrusco is a sparkling red wine from Italy with a pretty bad reputation in the past: lemonade with alcohol was one of the more friendly classifications. However, there are some very good ones with distinct flavours and undeniable charm."),
+                   p("This data set contains 76 samples, and we have 1,208 variables. A key feature of such MS-based metabolomics data is that the majority of the feature intensities are comparable in size, but often there are a few Very Large numbers present. The data set contains samples from three different origins of the wine (indicated with different colours). ")),
             column(width = 4,
-                   p("\nBelow, you'll see the score plot and the loading plot for a given scaling method. First, notice that the numbers at the axes of the score and loading plots are identical. Is this a coincidence?"),
-                   p("In the dropdown box to the right you can select different options. This will lead to very different results below - the question to you is whether you understand the changes.")),
+                   p("\nBelow, you'll see the score plot and the loading plot for a given scaling method. Again, note that the numbers at the axes of the score and loading plots are identical."),
+                   p("In the dropdown box to the right you can select different options. This will lead to very different results below - can you understand the changes (to some extent, at least)?")),
             column(width = 2,
                    selectInput("LScaling",
                                label = "Choose scaling",
@@ -185,19 +185,15 @@ tab4ExLS <-
 tabEx5 <- 
   tabItem(tabName = "ex5",
           h2("\nExercise 5: Choosing the 'Correct' Number of Components"),
-          box(p("We may wonder how many PCs to consider to obtain a good overview of the multivariate data. Of course, this depends on the data set. The original idea that it should be possible to distinguish 'significant' components from 'non-significant' components (signal versus noise) is more or less extinct, which is why we put the title word Correct in quotes. This is exploratory analysis! The question is: what plots show you something interesting?"),
-              p("Nevertheless there are a couple of rules of thumb that can be used. First of all, we may decide that the first two components are enough, period. This is quite common in visualization applications. Secondly, we may require a certain percentage of variance explained - typically something like 80%, or, for data sets with more variables, 50%. Thirdly, we may look at scree plots."),
-              p("Here you will look at a number of criteria for the wine data. Note that, again, the optimal number of components really depends on the scaling. In addition, the same exercise can be done for a data set with many more variables."), width = 8))
+          box(p("So how many PCs should we consider to obtain a good overview of our data? Of course, this depends on the data set. The idea that it should be possible to distinguish 'significant' components from 'non-significant' components (signal versus noise) is rarely tenable, which is why we put the title word Correct in quotes. This is exploratory analysis! The question is: what plots show you something interesting?"),
+              p("There are a couple of rules of thumb. First of all, we may decide that the first two components are enough, period. This is quite common in visualization applications. Secondly, we may require a certain percentage of variance explained - typically something like 80%, or, for data sets with more variables, 50%. Thirdly, we may look at scree plots."),
+              p("Here you will look at a number of criteria for the wine data. Note that, again, scaling has a large influence. In addition, the same exercise can be done for the Lambrusco set (with many more variables than the wine data)."), width = 8))
 
 tab5ExW <-
   tabItem(tabName = "ex5Wine",
           fluidRow(
             column(width = 6,
                    p("\nThe wine data - just to remind you - 177 samples, three varieties, and 13 (very different) variables. You choose the scaling and you'll see the two types of screeplot (log variance, and cumulative percentage explained). Choose the number of components and you'll see the corresponding scores.")),
-            column(width = 2,
-                   selectInput("WineNComp", label = "Number of PCs",
-                               choices = 1:13, 
-                               selected = "2")),
             column(width = 2,
                    selectInput("WScalingScree",
                                label = "Choose scaling",
@@ -208,6 +204,10 @@ tab5ExW <-
                                            "Sqrt scaling" = "sqrt",
                                            "Log scaling plus autoscaling" = "logauto",
                                            "Sqrt scaling plus autoscaling" = "sqrtauto"))),
+            column(width = 2,
+                   selectInput("WineNComp", label = "Number of PCs",
+                               choices = 1:13, 
+                               selected = "2")),
             column(width = 2,
                    actionButton("showWineScree", "Go!"))
           ),
@@ -226,10 +226,6 @@ tab5ExL <-
             column(width = 6,
                    p("\nThe Lambrusco data again: 76 samples, and 1,208 variables. You choose the scaling and you'll see the two types of screeplot (log variance, and cumulative percentage explained). Choose the number of components and you'll see the corresponding scores.")),
             column(width = 2,
-                   selectInput("LambNComp", label = "Number of PCs",
-                               choices = paste(1:10), 
-                               selected = "2")),
-            column(width = 2,
                    selectInput("LScalingScree",
                                label = "Choose scaling",
                                choices = c("Mean centering" = "mean",
@@ -239,6 +235,10 @@ tab5ExL <-
                                            "Sqrt scaling" = "sqrt",
                                            "Log scaling plus autoscaling" = "logauto",
                                            "Sqrt scaling plus autoscaling" = "sqrtauto"))),
+            column(width = 2,
+                   selectInput("LambNComp", label = "Number of PCs",
+                               choices = paste(1:10), 
+                               selected = "2")),
             column(width = 2,
                    actionButton("showLambruscoScree", "Go!"))
           ),
@@ -259,19 +259,43 @@ server <- function(input, output) {
   PCA.PCA <- PCA(scale(PCADATA, scale = FALSE))
   wine.PCA <- PCA(scale(wines))
 
-  myscoreplot <- function(PCAobj, pcs = c(1,2),
+  myscoreplot <- function(PCAobj, pcs = 1:2,
                           groups = rep(1, nrow(PCAobj$scores))) {
-    PCAscores <- data.frame(PCa = PCAobj$scores[,pcs[1]],
-                            PCb = PCAobj$scores[,pcs[2]],
-                            groups = groups)
+    npc <- length(pcs)
+    PCAscores <- as.data.frame(cbind(scores(PCAobj)[,pcs,drop=FALSE],
+                                     groups))
+    colnames(PCAscores) <- c(paste("PC", 1:npc, sep = ""), "groups")
+    if (npc == 1)
+      PCAscores$objects <- 1:nrow(PCAscores)
     PCAperc <- round(100*PCAobj$var[pcs] / PCAobj$totalvar, 1)
-    xyplot(PCb ~ PCa, data = PCAscores, groups = groups,
-           xlab = paste("PC ", pcs[1], " (", PCAperc[1], "%)", sep = ""),
-           ylab = paste("PC ", pcs[2], " (", PCAperc[2], "%)", sep = ""),
-           panel = function(...) {
-             panel.abline(h = 0, v = 0, col = "gray", lty = 2)
-             panel.xyplot(...)
-           })    
+    ##    browser()
+
+    if (npc == 1) {
+      xyplot(PC1 ~ objects, type = "h", main = "Scores",
+             ylim = c(min(0, min(PCAscores[,1])),
+                      max(0, max(PCAscores[,1]))),
+             groups = groups, data = PCAscores,
+             panel = function(...) {
+               panel.abline(h = 0, v = 0, col = "gray", lty = 2)
+               panel.xyplot(...)
+             })
+    } else {
+      if (npc == 2) { 
+        xyplot(PC2 ~ PC1, data = PCAscores, groups = groups,
+               main = "Scoreplot",
+               xlab = paste("PC ", pcs[1], " (", PCAperc[1], "%)",
+                            sep = ""),
+               ylab = paste("PC ", pcs[2], " (", PCAperc[2], "%)",
+                            sep = ""),
+               panel = function(...) {
+                 panel.abline(h = 0, v = 0, col = "gray", lty = 2)
+                 panel.xyplot(...)
+               })
+      } else {
+        splom(PCAscores[,1:npc], pscales = 0,
+              groups = groups, main = "Scores")
+      }
+    }
   }
   
   output$plotPairs <- renderPlot({
@@ -313,7 +337,7 @@ server <- function(input, output) {
         pcs <- as.numeric(unique(c(input$PC1, input$PC2)))
       }
       
-      loadingplot(PCA.PCA, pc = pcs, show.names = TRUE)
+      loadingplot(PCA.PCA, pc = pcs, show.names = TRUE, main = "Loadings")
     })
   })
 
@@ -328,7 +352,7 @@ server <- function(input, output) {
         pcs <- as.numeric(unique(c(input$PC1W, input$PC2W)))
       }
       
-      loadingplot(wine.PCA, pc = pcs, show.names = TRUE)
+      loadingplot(wine.PCA, pc = pcs, show.names = TRUE, main = "Loadings")
     })
   })
 
@@ -341,7 +365,8 @@ server <- function(input, output) {
     par(mfrow = c(1,3))
     scoreplot(wine.PCA, pc = pcs, col = as.integer(vintages))
     loadingplot(wine.PCA, pc = pcs, show.names = TRUE)
-    biplot(wine.PCA, pc = pcs, score.col = as.integer(vintages), show.names = "loadings")
+    biplot(wine.PCA, pc = pcs, score.col = as.integer(vintages),
+           show.names = "loadings")
     })
   
   output$PCABiplotQuestionWine <- renderText({
@@ -364,81 +389,74 @@ server <- function(input, output) {
     })
     
     output$LamboLoadings <- renderPlot({
-      loadingplot(Lambo.PCA(), pc = 1:2)
+      loadingplot(Lambo.PCA(), pc = 1:2, main = "Loadings")
     })
     output$LamboScores <- renderPlot({
       myscoreplot(Lambo.PCA(), pc = 1:2, groups = sample.labels)
     })
-
+  })
+  
+  Wine.PCAScr <- eventReactive(input$WScalingScree,
+  {
+    switch(input$WScalingScree,
+           "mean" = PCA(scale(wines, scale = FALSE)),
+           "auto" = PCA(scale(wines)),
+           "pareto" = PCA(scale(wines,
+                                scale =
+                                  apply(wines, 2, function(x) sqrt(sd(x))))),
+           "log" = PCA(scale(log(wines + 1), scale = FALSE)),
+           "sqrt" = PCA(scale(sqrt(wines), scale = FALSE)),
+           "logauto" = PCA(scale(log(wines + 1))),
+           "sqrtauto" = PCA(scale(sqrt(wines))))
   })
 
-  observeEvent(input$showWineScree, {
-    output$WineScreeQuestion <- renderText({
-      "How many PCs would you pick?"})
-    
-    Wine.PCAScr <- reactive({
-      switch(input$WScalingScree,
-             "mean" = PCA(scale(wines, scale = FALSE)),
-             "auto" = PCA(scale(wines)),
-             "pareto" = PCA(scale(wines, scale =
-                                       apply(wines, 2, function(x) sqrt(sd(x))))),
-             "log" = PCA(scale(log(wines + 1), scale = FALSE)),
-             "sqrt" = PCA(scale(sqrt(wines), scale = FALSE)),
-             "logauto" = PCA(scale(log(wines + 1))),
-             "sqrtauto" = PCA(scale(sqrt(wines))))
-    })
-    
-    output$WineScree <- renderPlot({
+  output$WineScree <- renderPlot({
       par(mfrow = c(2,1), mar = c(4, 4.2, 0, 1))
       screeplot(Wine.PCAScr())
       abline(h = 0, col = "gray", lty = 2)
       screeplot(Wine.PCAScr(), ylim = c(0, 100), type = "percentage")
       abline(h = c(0, 100), col = "gray", lty = 2)
     })
+
+  observeEvent(input$showWineScree, {
+    output$WineScreeQuestion <- renderText({
+      "How many PCs would you pick?"})
     
     output$WineScorePairs <- renderPlot({
-      if (as.integer(input$WineNComp) < 3) {
-        scoreplot(Wine.PCAScr(), col = wine.classes, pch = wine.classes)
-      } else {
-        splom(scores(Wine.PCAScr(), as.integer(input$WineNComp)),
-              pscales = 0, groups = vintages, pch = ".", cex = 2)
-      }
+      myscoreplot(Wine.PCAScr(), pcs = 1:input$WineNComp,
+                  groups = wine.classes)
     })
   })  
 
+  Lambo.PCAScr <- eventReactive(input$LScalingScree,
+  {
+    switch(input$LScalingScree,
+           "mean" = PCA(scale(X, scale = FALSE)),
+           "auto" = PCA(scale(X)),
+           "pareto" = PCA(scale(X, scale =
+                                     apply(X, 2, function(x) sqrt(sd(x))))),
+           "log" = PCA(scale(log(X + 1), scale = FALSE)),
+           "sqrt" = PCA(scale(sqrt(X), scale = FALSE)),
+             "logauto" = PCA(scale(log(X + 1))),
+           "sqrtauto" = PCA(scale(sqrt(X))))
+  })
+    
+  output$LamboScree <- renderPlot({
+    par(mfrow = c(2,1), mar = c(4, 4.2, 0, 1))
+    screeplot(Lambo.PCAScr(), npc = 10)
+    abline(h = 0, col = "gray", lty = 2)
+    screeplot(Lambo.PCAScr(), npc = 10,
+              ylim = c(0, 100), type = "percentage")
+    abline(h = c(0, 100), col = "gray", lty = 2)
+  })
+  
   observeEvent(input$showLambruscoScree, {
     output$LambruscoScreeQuestion <- renderText({
       "Here we limit your choice to the first ten PCs. There are more - how many PCs could you choose at most?"})
     
-    Lambo.PCAScr <- reactive({
-      switch(input$LScalingScree,
-             "mean" = PCA(scale(X, scale = FALSE)),
-             "auto" = PCA(scale(X)),
-             "pareto" = PCA(scale(X, scale =
-                                       apply(X, 2, function(x) sqrt(sd(x))))),
-             "log" = PCA(scale(log(X + 1), scale = FALSE)),
-             "sqrt" = PCA(scale(sqrt(X), scale = FALSE)),
-             "logauto" = PCA(scale(log(X + 1))),
-             "sqrtauto" = PCA(scale(sqrt(X))))
-    })
-    
-    output$LamboScree <- renderPlot({
-      par(mfrow = c(2,1), mar = c(4, 4.2, 0, 1))
-      screeplot(Lambo.PCAScr(), npc = 10)
-      abline(h = 0, col = "gray", lty = 2)
-      screeplot(Lambo.PCAScr(), npc = 10,
-                ylim = c(0, 100), type = "percentage")
-      abline(h = c(0, 100), col = "gray", lty = 2)
-    })
-    
     output$LamboScorePairs <- renderPlot({
-      if (as.integer(input$LambNComp) < 3) {
-        scoreplot(Lambo.PCAScr(), col = as.integer(sample.labels),
-                  pch = as.integer(sample.labels))
-      } else {
-        splom(scores(Lambo.PCAScr(), as.integer(input$LambNComp)),
-              pscales = 0, groups = sample.labels, pch = ".", cex = 2)
-      }
+      myscoreplot(Lambo.PCAScr(), pcs = 1:input$LambNComp,
+                  groups = sample.labels)
     })
   })  
 }

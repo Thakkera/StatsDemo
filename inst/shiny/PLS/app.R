@@ -181,10 +181,7 @@ tabEx3L <-
             column(width = 6,
                    box(plotOutput(outputId = "PLSpredictionsL"),
                        align = "center", width=NULL),
-                   column(width = 6,
-                          tableOutput("PLSpredictionsLcrosstab")),
-                   column(width = 6,
-                          htmlOutput(outputId = "PLSPredictionQuestionLambo")))
+                   htmlOutput(outputId = "PLSPredictionQuestionLambo"))
           ))
 
 tabEx3M <-
@@ -409,6 +406,13 @@ server <- function(input, output) {
     })
   })
 
+  ## function returning the number of misclassifcations given a
+  ## n-column probability matrix, and an n-class factor or vector
+  checkClassifPred <- function(probmat, classif) {
+    preds <- apply(probmat, 1, which.max)
+    sum(preds != as.numeric(classif)) / length(classif)
+  }
+
   observeEvent(input$PLSScalingL, {
     set.seed(7)
     lamboTest.idx <- sample(nrow(X), 25)
@@ -457,37 +461,55 @@ server <- function(input, output) {
     lambo.cl.tr <- lambo.cl[lamboTraining.idx,]
     PLSmodL <- plsr(lambo.cl.tr ~ LamboPLSX.tr,
                     ncomp = 10, validation = "LOO")
+
+    PLStrainingErr <-
+      apply(fitted(PLSmodL), 3,
+            function(predmat)
+              checkClassifPred(predmat, sample.labels[lamboTraining.idx]))
+    PLScvErr <-
+      apply(PLSmodL$validation$pred, 3,
+            function(predmat)
+              checkClassifPred(predmat, sample.labels[lamboTraining.idx]))
     
     output$PLScvL <- renderPlot({
-      plot(PLSmodL, "validation", col = 4, lwd = 2, type = "h",
-           ylab = "RMSECV",
-           main = paste("PLS: LOO -", input$PLSScalingL))
+      ymax <- max(PLStrainingErr, PLScvErr)
+      plot(PLScvErr, col = "red", type = "h", lwd = 10,
+           ylab = "Fraction of misclassifications",
+           xlab = "Number of components", ylim = c(0, ymax))
+      lines(PLStrainingErr, col = "black", type = "h", lwd = 2)
+      legend("topright", bty = "n", legend = c("Crossvalidation",
+                                               "Training"),
+             lty = 1, lwd = c(10, 2), col = c(2, 1))
+      abline(h = 0, col = "gray")
     })
 
-    observeEvent(input$GoPLSpredictionsL, {  
-      plspredictionsL <- 
-        c(predict(PLSmodL, newdata = as.data.frame(LamboPLSX.tst),
-                  ncomp = as.numeric(input$PLSLnLV)))
-      
-      output$PLSpredictionsL <- renderPlot({
-        plot(LamboPLSX.tst[, "alcohol"], plspredictionsL,
-             xlab = "True values", ylab = "Predicted values",
-             main = paste("Wines, test set -", input$PLSWnLV, "components"))
-        abline(0, 1, col = 4)
-        myRMS <- mean((plspredictions - LamboPLSX.tst[, "alcohol"])^2)
-        legend("topleft", pch = -1, legend = paste("RMS =", round(myRMS , 4)),
-               bty = "n")
+    observeEvent(input$GoPLSpredictionsL, {
+      observeEvent(input$PLSLnLV, {
+        plspredictionsL <-
+          predict(PLSmodL, newdata = LamboPLSX.tst,
+                  ncomp = as.numeric(input$PLSLnLV))[,,1]
+        ntotal <- length(lamboTest.idx)
+        ncorrect <- checkClassifPred(plspredictionsL,
+                                     sample.labels[lamboTest.idx]) * ntotal
+        output$PLSpredictionsL <- renderPlot({
+          matplot(plspredictionsL,
+                  xlab = "Sample", ylab = "Class probability",
+                  main = paste("Predictions correct for", ntotal - ncorrect,
+                               "out of", ntotal, "cases"))
+          points(1:nrow(plspredictionsL),
+                 apply(plspredictionsL, 1, max),
+                 col = as.integer(sample.labels[lamboTest.idx]),
+                 cex = 2)
+          
+          abline(h = c(0, 1), col = "gray", lty = 2)
+        })
       })
       
-      output$PLSPredictionQuestionLambo <- renderText({"Again: does the performance on the test set correspond to what you expected on the basis of the crossvalidation?"})
+      output$PLSPredictionQuestionLambo <- renderText({
+        "In the plot above, the circle around the highest probability indicates the correct class. If the number inside the circle has the same colour as the circle, the prediciton is correct. Again: does the performance on the test set correspond to what you expected on the basis of the crossvalidation?"
+      })
     })
   })
-
-  ## Insert Lambrusco stuff here:
-  ## 1) crossval results showing for each scaling the number of misclassified cases
-  ## 2) test set prediction figure in terms of class probabilities (think how to show this)
-  ## 3) crosstable for the test se
-  ## 4) a questiont
 }
 
 body <- dashboardBody(

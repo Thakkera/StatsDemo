@@ -318,9 +318,6 @@ server <- function(input, output) {
       "For each of the three classes a separate regression vector is obtained. Which variables are specific for which classes? What characteristics are important? Are there any variables that are quite clearly unimportant?"}) 
   })
 
-  ## Several problems here:
-  ## 3) the log RMSE values (and probably also the sqrt ones) are not on the same scale, so backtransformation is necessary for a good comparison. Alternatively, a question for the student
-  ## 4) before hitting Go! people should think about the optimal number of latent variables.
   observeEvent(input$PLSScalingW, {
     set.seed(7)
     winesTest.idx <- sort(sample(nrow(wines), 50))
@@ -482,7 +479,7 @@ server <- function(input, output) {
                bty = "n")
       })
       
-      output$PLSPredictionQuestionWine <- renderText({"How close is the error estimate from the test data (right panel) to the crossvalidation estimate on the training data (left panel)?"})
+      output$PLSPredictionQuestionLambo <- renderText({"Again: does the performance on the test set correspond to what you expected on the basis of the crossvalidation?"})
     })
   })
 

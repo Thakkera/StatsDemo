@@ -2,6 +2,7 @@ runEx <- function(example) {
   ## locate all the shiny app examples that exist
   validExamples <-
     list.files(system.file("shiny", package = "StatsDemo"))
+  validExamples <- validExamples[validExamples != "test"]
 
   validExamplesMsg <-
     paste0(
@@ -13,11 +14,12 @@ runEx <- function(example) {
   if (missing(example) || !nzchar(example) || !example %in% validExamples) {
     message(
       'Please run `runEx()` with a valid example app as an argument.\n',
-      validExamplesMsg,
-      call. = FALSE)
+      validExamplesMsg)
   } else {
     ## find and launch the app
     appDir <- system.file("shiny", example, package = "StatsDemo")
     shiny::runApp(appDir, display.mode = "normal")
   }
+
+  invisible()
 }

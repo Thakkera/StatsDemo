@@ -14,7 +14,8 @@
   testing, some basic plotting methods, PCA and PLS. This version
   contains shiny apps for the four topics (see the examples below); the
   older versions of the exercises are still available as functions
-  \code{StatsQuiz()}, \code{ExPlot()}, \code{ExPCA()} and \code{ExPLS()}.
+  \code{StatsDemo:::StatsQuiz()}, \code{StatsDemo:::ExPlot()},
+  \code{StatsDemo:::ExPCA()} and \code{StatsDemo:::ExPLS()}.
 }
 \author{
 \packageAuthor{StatsDemo}

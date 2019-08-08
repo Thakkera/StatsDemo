@@ -215,7 +215,7 @@ tab5ExW <-
             column(width = 6,
                    box(plotOutput(outputId = "WineScree"), width = 12)),
             column(width = 6,
-                   box(plotOutput(outputId = "WineScorePairs"), width = 12))))
+                   box(plotOutput(outputId = "WineScorePairs"), width = 12)))
           )
 
 tab5ExL <-

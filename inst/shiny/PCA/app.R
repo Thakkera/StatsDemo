@@ -215,9 +215,7 @@ tab5ExW <-
             column(width = 6,
                    box(plotOutput(outputId = "WineScree"), width = 12)),
             column(width = 6,
-                   box(plotOutput(outputId = "WineScorePairs"), width = 12))),
-          fluidRow(align = "center",
-                   textOutput(outputId = "WineScreeQuestion"))
+                   box(plotOutput(outputId = "WineScorePairs"), width = 12))))
           )
 
 tab5ExL <-
@@ -419,9 +417,6 @@ server <- function(input, output) {
     })
 
   observeEvent(input$showWineScree, {
-    output$WineScreeQuestion <- renderText({
-      "How many PCs would you pick?"})
-    
     output$WineScorePairs <- renderPlot({
       myscoreplot(Wine.PCAScr(), pcs = 1:input$WineNComp,
                   groups = wine.classes)

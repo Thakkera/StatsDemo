@@ -186,21 +186,17 @@ tabEx3L <-
 
 tabEx3M <-
   tabItem(tabName = "ex3Mystery",
-          fluidRow(
-            column(width = 4,
-                   p("Again a classification problem, a two-class problem this time (control vs treatment). There are 40 samples, 20 for each class, and 2000 variables. Mean-centering is applied since the variables are measured on the same scales. You can choose the number of latent variables to in the prediction. You will see the prediction results for the training data as well as the cross-validated results.")),
-            column(width = 8,
-                   box(plotOutput(outputId = "PLScvM"),
-                       align = "center", width=8, height = 200),
-                   box(selectInput("PLSMnLV", label = "Nr of LVs",
-                                   choices = 1:10),
-                       align = "center", width = 2))
-          ),
-          fluidRow(box(plotOutput(outputId = "PLSpredictionsM"),
-                       align = "center", width=6)),
-          fluidRow(align = "center",
-                   htmlOutput(outputId = "PLSPredictionQuestionMystery"))
-)
+          column(width = 6,
+                 p("Again a classification problem, a two-class problem this time (control vs treatment). There are 40 samples, 20 for each class, and 2000 variables. Autoscaling is applied. In the plot below you can see the prediction results for the training data. Which number of latent variables would you pick?"),
+                 box(plotOutput(outputId = "PLStrM", height = 300),
+                     align = "center", width=12),
+                 p("Hit the 'Go!' button to see the results."),
+                 actionButton("GoMysteryPLS", "Go!")),
+          column(width = 6,
+                 box(htmlOutput(outputId = "PLSPredictionQuestionMystery"),
+                     width = 12),
+                 box(plotOutput(outputId = "PLScvM", height = 300),
+                     align = "center", width=12)))
 
 server <- function(input, output) {
   data(wines)
@@ -208,6 +204,17 @@ server <- function(input, output) {
   
   data(lambrusco)
   lambo.cl <- classvec2classmat(sample.labels)
+
+  set.seed(7)
+  nsamp <- 80
+  RX <- matrix(rnorm(5*nsamp*nsamp), nrow = 2*nsamp)
+  RY <- rep(c(0, 1), each = nsamp)
+  R.df <- data.frame(Y = RY, X = I(RX))
+  Rpls <- plsr(RY ~ RX, ncomp = 10, scale = TRUE, validation = "CV")
+  Mfit <- round(fitted(Rpls))[,1,]
+  Mfit.err <- apply(Mfit, 2, function(x) sum(x != RY))/(2*nsamp)
+  Mcv <- round(Rpls$validation$pred)[,1,]
+  Mcv.err <- apply(Mcv, 2, function(x) sum(x != RY))/(2*nsamp)
 
   myscoreplot <- function(PCAobj, pcs = c(1,2),
                           groups = rep(1, nrow(PCAscores)),
@@ -452,11 +459,11 @@ server <- function(input, output) {
              "logauto" =
                scale(log(X[lamboTest.idx,] + 1),
                      center = colMeans(log(X[lamboTraining.idx,] + 1)),
-                     scale = apply(log(X[lamboTraining.idx,] + 1, 2, sd))),
+                     scale = apply(log(X[lamboTraining.idx,] + 1), 2, sd)),
              "sqrtauto" =
                scale(sqrt(X[lamboTest.idx,]),
                      center = colMeans(sqrt(X[lamboTraining.idx,])),
-                     scale = apply(sqrt(X[lamboTraining.idx,], 2, sd))))
+                     scale = apply(sqrt(X[lamboTraining.idx,]), 2, sd)))
 
     lambo.cl.tr <- lambo.cl[lamboTraining.idx,]
     PLSmodL <- plsr(lambo.cl.tr ~ LamboPLSX.tr,
@@ -490,12 +497,14 @@ server <- function(input, output) {
                   ncomp = as.numeric(input$PLSLnLV))[,,1]
         ntotal <- length(lamboTest.idx)
         ncorrect <- checkClassifPred(plspredictionsL,
-                                     sample.labels[lamboTest.idx]) * ntotal
+                                     sample.labels[lamboTest.idx])
         output$PLSpredictionsL <- renderPlot({
           matplot(plspredictionsL,
                   xlab = "Sample", ylab = "Class probability",
-                  main = paste("Predictions correct for", ntotal - ncorrect,
-                               "out of", ntotal, "cases"))
+                  main = paste("Predictions correct for ",
+                               ntotal - ncorrect*ntotal,
+                               " out of ", ntotal, " cases (= ",
+                               round(ncorrect, 3), ")", sep = ""))
           points(1:nrow(plspredictionsL),
                  apply(plspredictionsL, 1, max),
                  col = as.integer(sample.labels[lamboTest.idx]),
@@ -506,9 +515,32 @@ server <- function(input, output) {
       })
       
       output$PLSPredictionQuestionLambo <- renderText({
-        "In the plot above, the circle around the highest probability indicates the correct class. If the number inside the circle has the same colour as the circle, the prediciton is correct. Again: does the performance on the test set correspond to what you expected on the basis of the crossvalidation?"
+        "In the plot above, the circle around the highest probability indicates the correct class. If the number inside the circle has the same colour as the circle, the prediction is correct. Again: does the performance on the test set correspond to what you expected on the basis of the crossvalidation?"
       })
     })
+  })
+
+  output$PLStrM <- renderPlot({
+    plot(Mfit.err, type = "n", ylab = "Fraction of misclassifications",
+         ylim = c(0, 1), xlab = "Number of components",
+         main = "Training data")
+    abline(h = c(0, 1), col = "gray", lty = 2)
+    points(Mfit.err, col = 4, type = "h", lwd = 5)
+  })
+
+  observeEvent(input$GoMysteryPLS, {
+    output$PLSPredictionQuestionMystery  <- renderText({
+      "It may surprise you, but you just fitted a PLS model to random data, and yet the training seemed to give perfect or near-perfect predictions! Crossvalidation leads to correct answers, prediction errors in the neighbourhood of 50% (since there are two classes only). Since there are more variables than cases PLS (just like many other multivariate methods) appears to be able to obtain a perfect fit to the data, but the prediction capabilities of such a model are null."
+    })
+    
+    output$PLScvM <- renderPlot({
+      plot(Mcv.err, type = "n", ylab = "Fraction of misclassifications",
+           ylim = c(0, 1), xlab = "Number of components",
+           main = "Crossvalidation results")
+      abline(h = c(0, 1), col = "gray", lty = 2)
+      points(Mcv.err, col = 2, type = "h", lwd = 5)
+    })
+
   })
 }
 

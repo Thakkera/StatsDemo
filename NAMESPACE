@@ -1,4 +1,5 @@
-export(ExPlot, StatsQuiz, ExPCA, ExPLS, classvec2classmat,
+export(#ExPlot, StatsQuiz, ExPCA, ExPLS,
+       classvec2classmat,
        PCA, scoreplot.PCA, loadingplot.PCA, biplot.PCA,
        screeplot, scores.PCA, loadings.PCA, variances, reconstruct,
        summary.PCA, runEx)
